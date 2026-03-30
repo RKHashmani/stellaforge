@@ -1,0 +1,3 @@
+[submodule "stellarator_workflow"]
+	path = stellarator_workflow
+	url = https://github.com/rogeriojorge/stellarator_workflow.git
