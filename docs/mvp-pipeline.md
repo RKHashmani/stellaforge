@@ -65,16 +65,17 @@ Each `input/` directory contains config files for that code. Each `expected_outp
 Notes: `HSX_QHS_vacuum_ns201` is an example name. This can be changed. As can the entirety of the name `optional_terminal_output.vmec`.
 
 ### How to Install
-```bash
-git clone https://github.com/uwplasma/vmec_jax.git
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
+
+From inside the `mvp/` directory
+
 ```
+pixi install --environment stage-1
+```
+
 ### How to Run
 
-```bash
-vmec_jax mvp/stage1-equilibrium/vmec_jax/input/input.HSX_QHS_vacuum_ns201
+```
+pixi run stage-1-equilibrium
 ```
 
 ---
@@ -91,26 +92,24 @@ vmec_jax mvp/stage1-equilibrium/vmec_jax/input/input.HSX_QHS_vacuum_ns201
 Notes: The input comes from Stage 1 output.
 
 ### How to Install
-First, the dependencies:
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install "jax[cpu]" numpy scipy netCDF4 matplotlib
+
 ```
-Then, the software itself:
-```bash
-git clone https://github.com/uwplasma/boozx.git
-cd boozx
-pip install -e .
+pixi install --environment stage-2
 ```
+
 ### How to Run
-Inside python:
+
+```
+pixi run stage-2-boozer
+```
+
+which is morally similar to
+
 ```python
-import booz_xform_jax as bx  
-b=bx.Booz_xform()  
-b.read_wout("wout_HSX_QHS_vacuum_ns201.nc")  
-b.run()  
+import booz_xform_jax as bx
+b=bx.Booz_xform()
+b.read_wout("wout_HSX_QHS_vacuum_ns201.nc")
+b.run()
 b.write_boozmn("boozmn_HSX_QHS_vacuum_ns201.nc")
 ```
 
