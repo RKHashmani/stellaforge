@@ -1,0 +1,38 @@
+[workspace]
+channels = ["conda-forge"]
+name = "mvp"
+platforms = ["linux-64", "osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+
+[feature.stage-1.dependencies]
+numpy = ">=2.4.3,<3"
+jax = ">=0.9.1,<0.10"
+netcdf4 = ">=1.7.4,<2"
+
+[feature.stage-1.pypi-dependencies]
+vmec-jax = { git = "https://github.com/uwplasma/vmec_jax", rev = "cfdf674b0ca213b3b97244b0cf0273d481ec37fd" }
+
+[feature.stage-1.tasks.stage-1-equilibrium]
+cmd = "vmec_jax stage1-equilibrium/vmec_jax/input/input.HSX_QHS_vacuum_ns201"
+
+[feature.stage-2.dependencies]
+numpy = ">=2.4.3,<3"
+scipy = ">=1.17.1,<2"
+jax = ">=0.9.1,<0.10"
+netcdf4 = ">=1.7.4,<2"
+matplotlib = ">=3.10.8,<4"
+plotly = ">=6.6.0,<7"
+
+[feature.stage-2.pypi-dependencies]
+booz-xform-jax = { git = "https://github.com/uwplasma/booz_xform_jax.git", rev = "1f206597f2f28436e0e2124160c13de9ae63b2ea" }
+
+[feature.stage-2.tasks.stage-2-boozer]
+cmd = "python stage2-boozer/example.py"
+
+[environments]
+stage-1 = {features = ["stage-1"], no-default-feature = true}
+stage-2 = {features = ["stage-2"], no-default-feature = true}
