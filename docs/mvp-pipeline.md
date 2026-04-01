@@ -125,19 +125,21 @@ b.write_boozmn("boozmn_HSX_QHS_vacuum_ns201.nc")
 | **In**    | Fortran-style Text `input.*` | `mvp/stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201`          |
 | **Out**   | HDF5 `sfincsOutput.h5`       | `mvp/stage3-neoclassical/sfincs_jax/expected_output/sfincsOutput.h5`           |
 
-Notes: The input also comes from Stage 1 output. The 2nd input file has a variable `equilibriumFile` that must point to the (relative or absolute) location of the Stage 1's NetCDF output file. Additionally, the terminal output can be printed.
+> [!NOTE]
+> The input also comes from Stage 1 output. The 2nd input file has a variable `equilibriumFile` that must point to the (relative or absolute) location of the Stage 1's NetCDF output file. Additionally, the terminal output can be printed.
 
 #### How to Install
-```bash
-git clone https://github.com/uwplasma/sfincs_jax.git
-cd sfincs_jax
-pip install .
+
 ```
-**Note:** the README advertises `pip install sfincs_jax` from PyPI, but this does not currently work. Use source install.
+pixi install --environment stage-3
+```
+
 #### How to Run
 
-```bash
-sfincs_jax input.HSX_QHS_vacuum_ns201
+**After** manually editing the value of `equilibriumFile` in `mvp/stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201`, run
+
+```
+pixi run stage-3-neoclassical
 ```
 
 ---
