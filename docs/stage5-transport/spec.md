@@ -333,7 +333,7 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9.
 ## Container Specification (Phase 2)
 
 <!-- OWNER COMPLETES: Define the Docker container for Stage 5.
-     - Base image (e.g., python:3.11-slim or nvidia/cuda for GPU JAX)
+     - Base image (e.g., python:3-slim for CPU, nvidia/cuda:12.x for GPU JAX)
      - System-level dependencies
      - Python environment: JAX, diffrax, jaxlib, h5py, netCDF4, etc.
      - Trinity3D dependencies if included in the same container

@@ -306,9 +306,7 @@ Create a W&B dashboard showing:
 
 ### Container Architecture
 
-All containers are built from shared base images (see `docs/architecture.md` for full details):
-- **`stellaforge/base-cpu`** -- Standard Python + scientific stack (Stages 1, 2, 3, 5)
-- **`stellaforge/base-gpu`** -- NVIDIA CUDA + JAX[cuda] + scientific stack (Stage 4)
+Each stage has a fully independent, self-contained Dockerfile (see `docs/architecture.md` for full details). There are no shared base images -- each stage manages its own complete dependency stack. CPU stages start from `python:3-slim`; GPU stages (Stage 4) start from `nvidia/cuda:12.x-runtime`.
 
 Containers are published to **Docker Hub** under `stellaforge/`. Users can either:
 1. `docker pull stellaforge/stage1-equilibrium:v1.0` (prebuilt)
@@ -316,7 +314,7 @@ Containers are published to **Docker Hub** under `stellaforge/`. Users can eithe
 
 ### `versions.yaml`
 
-All upstream code versions, Python version, JAX version, and CUDA version are pinned in `versions.yaml` at the repo root. This is the single source of truth for reproducible builds. When upgrading any dependency:
+All upstream code versions, JAX version, and CUDA version are pinned in `versions.yaml` at the repo root. This is the single source of truth for reproducible builds. When upgrading any dependency:
 
 1. Update the version/SHA in `versions.yaml`
 2. Update the corresponding `requirements.txt` in `containers/stageN-*/`
@@ -327,7 +325,7 @@ All upstream code versions, Python version, JAX version, and CUDA version are pi
 ### Risks to Monitor
 
 1. **Source-build fragility:** Upstream repos may change build systems or dependencies. Pin to commit SHAs and test builds in CI.
-2. **Base image divergence:** CPU and GPU base images must maintain compatible JAX/NumPy versions to avoid subtle numerical differences between builds.
+2. **Independent dependency drift:** Since each stage manages its own dependencies, JAX or NumPy version mismatches between stages could introduce subtle numerical differences. Pin JAX/CUDA in `versions.yaml` and verify with cross-stage integration tests.
 3. **Cross-stage version compatibility:** When upgrading one stage's upstream code, verify its outputs are still valid inputs for the next stage. The integration tests catch this.
 
 ## Integration Testing

@@ -449,7 +449,7 @@ The following sections apply to Stage 3 as a whole, covering all three sub-stage
 <!-- OWNER COMPLETES: Document the Docker container(s) for Stage 3.
      Key design decision: one container for all three sub-stages or separate containers?
      For each container, include:
-     - Base image (e.g., python:3.11-slim, nvidia/cuda for GPU JAX)
+     - Base image (e.g., python:3-slim for CPU, nvidia/cuda:12.x for GPU JAX)
      - Key dependencies and their pinned versions (JAX, DESC if needed by MONKES, etc.)
      - Entry point command(s) -- one per sub-stage or a dispatcher
      - Volume mount expectations:

@@ -16,7 +16,7 @@ StellaForge is an end-to-end stellarator design pipeline connecting equilibrium,
 ```
 StellaForge/
 ├── CLAUDE.md                    # This file
-├── versions.yaml                # Pinned upstream commits, JAX, Python, CUDA versions
+├── versions.yaml                # Pinned upstream commits, JAX, CUDA versions
 ├── Snakefile                    # Pipeline DAG (Phase 3)
 ├── config.yaml                  # Default pipeline configuration
 ├── docs/                        # Project documentation
@@ -26,11 +26,8 @@ StellaForge/
 │   └── stage{N}-{name}/        # Per-stage specifications
 │       └── spec.md
 ├── containers/                  # Dockerfiles and entry-point scripts
-│   ├── base/                    # Shared base images (CPU and GPU)
-│   │   ├── Dockerfile.cpu       # python:3.11 + common scientific stack
-│   │   └── Dockerfile.gpu       # nvidia/cuda:12.x + JAX[cuda] + common stack
 │   └── stage{N}-{name}/        # Per-stage container build context
-│       ├── Dockerfile           # FROM stellaforge-base-{cpu|gpu}
+│       ├── Dockerfile           # Standalone (FROM python:3-slim or nvidia/cuda:12.x)
 │       ├── .dockerignore
 │       ├── requirements.txt     # Upstream package pins (commit SHAs for source builds)
 │       └── scripts/             # Entry-point and wrapper scripts
@@ -57,7 +54,6 @@ Forward-pass chain: vmec_jax -> booz_xform_jax -> (NEO_JAX + sfincs_jax + MONKES
 
 - Stage directories: `stage{N}-{name}` (e.g., `stage1-equilibrium`)
 - Container images: `stellaforge/stage{N}-{name}:{version}` (on Docker Hub)
-- Base images: `stellaforge/base-cpu:{version}`, `stellaforge/base-gpu:{version}`
 - W&B projects: `stellaforge-stage{N}-{name}`
 - Output directories: `{run_dir}/stage{N}_{name}/`
 - Test files: mirror source structure in `tests/`
@@ -214,8 +210,8 @@ Forward-pass chain: vmec_jax -> booz_xform_jax -> (NEO_JAX + sfincs_jax + MONKES
 - Keep Dockerfiles minimal -- install only production dependencies.
 
 **StellaForge container architecture:**
-- Two shared base images in `containers/base/`: `Dockerfile.cpu` (python:3.11-slim + common scientific stack) and `Dockerfile.gpu` (nvidia/cuda:12.x + JAX[cuda] + common stack). All stage containers inherit from one of these.
-- GPU stages (Stage 4: SPECTRAX-GK, and any future GPU-accelerated stages) use the GPU base image. All others use the CPU base image.
+- Each stage has a fully independent Dockerfile in `containers/stage{N}-{name}/`. There are no shared base images -- each stage manages its own complete dependency stack.
+- CPU stages start `FROM python:3-slim` (pin to a specific minor version tag in the actual Dockerfile). GPU stages (Stage 4: SPECTRAX-GK, and any future GPU-accelerated stages) start `FROM nvidia/cuda:12.x-runtime`.
 - Prebuilt images are published to Docker Hub under the `stellaforge/` organization.
 - Each stage's `containers/stage{N}-{name}/scripts/run.py` is the container entry point. These scripts bridge between the pipeline's file-based I/O and the upstream code's Python API.
 
@@ -224,7 +220,7 @@ Forward-pass chain: vmec_jax -> booz_xform_jax -> (NEO_JAX + sfincs_jax + MONKES
 - For pip-installable packages: pin exact versions (e.g., `jax==0.4.35`).
 - For source-built packages: pin to exact git commit SHAs, not branch names. A `git clone` + `git checkout {sha}` is reproducible; `git clone` of `main` is not.
 - Each stage's `containers/stage{N}-{name}/requirements.txt` must reference the pinned versions from `versions.yaml`.
-- Python and CUDA versions are standardized across all stages via the shared base images.
+- Each stage's Dockerfile pins its own Python version independently. The Python version is not hardcoded across the project; each stage uses whatever version its upstream dependencies require.
 
 ### Performance & Memory Management
 

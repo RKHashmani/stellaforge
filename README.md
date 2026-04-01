@@ -44,11 +44,8 @@ Stages 3 and 4 run in parallel. Each stage is independently swappable (see [arch
 
 ```
 containers/
-├── base/
-│   ├── Dockerfile.cpu              # Shared CPU base image (python:3.11 + scientific stack)
-│   └── Dockerfile.gpu              # Shared GPU base image (nvidia/cuda:12.x + JAX[cuda])
 └── stage{N}-{name}/
-    ├── Dockerfile                  # FROM stellaforge/base-{cpu|gpu}
+    ├── Dockerfile                  # Standalone (FROM python:3-slim or nvidia/cuda:12.x)
     ├── .dockerignore
     ├── requirements.txt            # Upstream package pins (commit SHAs)
     └── scripts/
@@ -56,7 +53,7 @@ containers/
 
 tests/stage{N}-{name}/             # Unit, regression, and integration tests
 input/                              # Reference input data (boundary coefficients, profiles)
-versions.yaml                      # Pinned upstream commits, JAX, Python, CUDA versions
+versions.yaml                      # Pinned upstream commits, JAX, CUDA versions
 ```
 
 Details on each file in the [Contributor Guide](docs/contributor-guide.md).
@@ -84,8 +81,7 @@ Install the JAX code, validate the I/O spec, document the API and convergence be
 
 Dockerfile, entry-point script, and unit/regression/integration tests per stage. Full checklist in the [Contributor Guide](docs/contributor-guide.md#phase-2-containerize--test).
 
-- [ ] Base images -- CPU and GPU Dockerfiles (`containers/base/`)
-- [ ] `versions.yaml` -- pinned upstream commit SHAs, JAX, Python, CUDA versions
+- [ ] `versions.yaml` -- pinned upstream commit SHAs, JAX, CUDA versions
 - [ ] Stage 1 -- container + tests
 - [ ] Stage 2 -- container + tests
 - [ ] Stage 3 -- container + tests

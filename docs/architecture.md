@@ -78,30 +78,30 @@ From the TeX manuscripts, two distinctions are critical for correct pipeline wir
 
 StellaForge is a **recipe repo**: it contains everything needed to build and run the containerized pipeline, but does not contain the upstream solver code itself. The upstream codes (vmec_jax, MONKES, etc.) are installed as dependencies during the Docker build.
 
-### Base Images
+### Stage-Independent Containers
 
-Two shared base images ensure consistent Python, JAX, and CUDA versions across all stages:
+Each stage has a fully independent, self-contained Dockerfile. There are no shared base images -- each stage manages its own complete dependency stack. This fully decoupled approach means:
 
-- **`stellaforge/base-cpu`** -- `python:3.11-slim` + NumPy, SciPy, h5py, netCDF4, xarray, wandb, and the common scientific stack. Used by Stages 1, 2, 3, and 5.
-- **`stellaforge/base-gpu`** -- `nvidia/cuda:12.x-runtime` + JAX[cuda] + the same scientific stack. Used by Stage 4 (SPECTRAX-GK) and any future GPU-accelerated stages.
-
-Each stage Dockerfile does `FROM stellaforge/base-cpu` (or `-gpu`) and adds only its stage-specific dependencies.
+- CPU stages use `FROM python:3-slim` (pin to a specific minor version tag in the actual Dockerfile, e.g., `python:3.12-slim`).
+- GPU stages use `FROM nvidia/cuda:12.x-runtime` and install JAX[cuda] directly. GPU stages may have less flexibility in Python version due to CUDA/JAX compatibility constraints.
+- Each Dockerfile installs its own scientific stack (NumPy, SciPy, h5py, netCDF4, xarray, wandb, etc.) alongside stage-specific upstream code.
+- Cross-stage dependency consistency is managed through `versions.yaml` (for JAX and CUDA pins) and integration tests (for output compatibility), not through shared images.
 
 ### Container Layout
 
 ```
 containers/
-├── base/
-│   ├── Dockerfile.cpu
-│   └── Dockerfile.gpu
 ├── stage1-equilibrium/
-│   ├── Dockerfile
+│   ├── Dockerfile             # Standalone (FROM python:3-slim)
 │   ├── .dockerignore
-│   ├── requirements.txt       # vmec_jax @ git+...@SHA
+│   ├── requirements.txt       # vmec_jax @ git+...@SHA, plus all dependencies
 │   └── scripts/
 │       ├── run.py             # ENTRYPOINT: reads input files, calls vmec_jax, writes wout
 │       └── config.py          # Translates pipeline config.yaml -> code-specific config
 ├── stage2-boozer/
+│   └── ...
+├── stage4-turbulence/
+│   ├── Dockerfile             # Standalone (FROM nvidia/cuda:12.x-runtime)
 │   └── ...
 └── ...
 ```
@@ -114,7 +114,6 @@ All upstream dependencies are pinned in `versions.yaml` at the repo root:
 
 ```yaml
 # versions.yaml
-python: "3.11"
 jax: "0.4.35"
 cuda: "12.4"
 
@@ -143,7 +142,7 @@ Prebuilt container images are published to **Docker Hub** under the `stellaforge
 
 **1. Source-build fragility.** Some upstream codes are not on PyPI and must be built from source (`git clone` + `pip install .`). These builds depend on the upstream repo's build system, which may change. Mitigations: pin commit SHAs, test builds in CI, maintain fallback known-good versions in `versions.yaml`.
 
-**2. Base image divergence.** The CPU and GPU base images have different system libraries and potentially different JAX versions. If a stage's output depends on JAX internals (e.g., float precision behavior), results may differ between CPU and GPU runs of the same code. Mitigation: standardize JAX and NumPy versions in both base images; test that key outputs match between CPU and GPU builds within tolerance.
+**2. Independent dependency drift.** Since each stage manages its own dependency stack, JAX or NumPy version mismatches between stages could cause subtle numerical differences in shared data formats. Mitigation: pin JAX and CUDA versions in `versions.yaml` as a project-wide recommendation; run cross-stage integration tests to catch format or precision mismatches.
 
 **3. Cross-stage version compatibility.** Stage 1 writes `wout_*.nc` using vmec_jax v1.2; Stage 2 reads it using booz_xform_jax built against vmec_jax v1.1. Subtle format differences could cause silent failures. Mitigation: integration tests at every stage boundary (Phase 2); `versions.yaml` provides a single source of truth for compatible version sets.
 

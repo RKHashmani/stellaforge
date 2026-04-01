@@ -197,7 +197,7 @@ where $w$ is reconstructed from the original covariant field harmonics.
 
 <!-- OWNER COMPLETES: Document the Docker container for Stage 2.
      Include:
-     - Base image (e.g., python:3.11-slim, nvidia/cuda for GPU JAX)
+     - Base image (e.g., python:3-slim for CPU, nvidia/cuda:12.x for GPU JAX)
      - Key dependencies and their pinned versions
      - Entry point command
      - Volume mount expectations: input from {run_dir}/stage1_equilibrium/, output to {run_dir}/stage2_boozer/

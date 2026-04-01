@@ -112,18 +112,27 @@ After Phase 1 is complete for your stage, move to containerization and testing.
 
 Your stage's container build context lives in `containers/stage{N}-{name}/`. See `docs/architecture.md` for the full container architecture.
 
-**Base image:** Use the shared StellaForge base image:
-- Most stages: `FROM stellaforge/base-cpu:{version}`
-- GPU stages (Stage 4): `FROM stellaforge/base-gpu:{version}`
+**Base image:** Each stage uses a standalone Dockerfile -- there are no shared base images.
+- CPU stages: `FROM python:3-slim` (pin to a specific minor version tag, e.g., `python:3.12-slim`)
+- GPU stages (Stage 4): `FROM nvidia/cuda:12.x-runtime` (install JAX[cuda] and all dependencies directly)
 
-The base images provide Python 3.11, JAX, and the common scientific stack (NumPy, SciPy, h5py, netCDF4, xarray, wandb). You only need to install your stage-specific upstream code.
+The `slim` variant is a minimal Debian image (~50 MB vs ~350 MB for the full `python:3` image), keeping containers small. If your stage needs system-level build tools (e.g., compilers for building C extensions from source), use the full `python:3` image or add `apt-get install` steps.
+
+Each Dockerfile installs the full scientific stack (NumPy, SciPy, h5py, netCDF4, xarray, wandb) alongside stage-specific upstream code. Pin JAX and CUDA versions according to `versions.yaml`.
 
 **Dockerfile structure:**
 ```dockerfile
-FROM stellaforge/base-cpu:latest
+FROM python:3-slim
+
+# Install scientific stack
+RUN pip install --no-cache-dir \
+    numpy scipy h5py netCDF4 xarray wandb
+
+# Install JAX (pinned version from versions.yaml)
+RUN pip install --no-cache-dir jax==0.4.35 jaxlib==0.4.35
 
 # Install upstream code (pinned to exact commit from versions.yaml)
-RUN pip install git+https://github.com/uwplasma/vmec_jax.git@<COMMIT_SHA>
+RUN pip install --no-cache-dir git+https://github.com/uwplasma/vmec_jax.git@<COMMIT_SHA>
 
 # Copy entry-point scripts
 COPY scripts/ /app/scripts/
