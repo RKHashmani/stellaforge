@@ -62,7 +62,8 @@ Each `input/` directory contains config files for that code. Each `expected_outp
 | **Out**                       | NetCDF `wout_*.nc` (similar to hdf5 file) | `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc`  |
 | **Additional Out** (optional) | Text (terminal output)                    | `mvp/stage1-equilibrium/vmec_jax/expected_output/optional_terminal_output.vmec` |
 
-Notes: `HSX_QHS_vacuum_ns201` is an example name. This can be changed. As can the entirety of the name `optional_terminal_output.vmec`.
+> [!NOTE]
+> `HSX_QHS_vacuum_ns201` is an example name. This can be changed. As can the entirety of the name `optional_terminal_output.vmec`.
 
 ### How to Install
 
@@ -89,7 +90,8 @@ pixi run stage-1-equilibrium
 | **In**    | NetCDF `wout_*.nc`   | `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc`    |
 | **Out**   | NetCDF `boozmn_*.nc` | `mvp/stage2-boozer/booz_xform_jax/expected_output/boozmn_HSX_QHS_vacuum_ns201.nc` |
 
-Notes: The input comes from Stage 1 output.
+> [!NOTE]
+> The input comes from Stage 1 output.
 
 ### How to Install
 
