@@ -46,7 +46,15 @@ sfincs-jax = { git = "https://github.com/uwplasma/sfincs_jax", rev = "de50abd2ee
 [feature.stage-3.tasks.stage-3-neoclassical]
 cmd = "sfincs_jax stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201"
 
+[feature.cuda]
+platforms = ["linux-64"]
+[feature.cuda.system-requirements]
+cuda = "12"
+
 [environments]
-stage-1 = {features = ["stage-1"], no-default-feature = true}
-stage-2 = {features = ["stage-2"], no-default-feature = true}
+stage-1 = {features = ["stage-1"], no-default-feature = true }
+stage-1-gpu = {features = ["stage-1", "cuda"], no-default-feature = true }
+stage-2 = {features = ["stage-2"], no-default-feature = true }
+stage-2-gpu = {features = ["stage-2", "cuda"], no-default-feature = true }
 stage-3 = {features = ["stage-3"], no-default-feature = true}
+stage-3-gpu = {features = ["stage-3", "cuda"], no-default-feature = true }
