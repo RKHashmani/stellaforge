@@ -62,7 +62,7 @@ spectrax-gk = { git = "https://github.com/uwplasma/SPECTRAX-GK.git", rev = "61aa
 booz-xform-jax = { git = "https://github.com/uwplasma/booz_xform_jax.git", rev = "1f206597f2f28436e0e2124160c13de9ae63b2ea" }
 
 [feature.stage-4.tasks.stage-4-turbulence]
-cmd = "spectrax-gk run --config ./stage4-turbulence/spectrax_gk/input/runtime_hsx_nonlinear_vmec_geometry.toml --out stage4-turbulence/spectrax_gk/hsx_run"
+cmd = "spectrax-gk run --config ./stage4-turbulence/spectrax_gk/input/runtime_hsx_nonlinear_vmec_geometry.toml --out stage4-turbulence/spectrax_gk/tools_out/hsx_run"
 
 [feature.stage-5.dependencies]
 scipy = ">=1.17.1,<2"

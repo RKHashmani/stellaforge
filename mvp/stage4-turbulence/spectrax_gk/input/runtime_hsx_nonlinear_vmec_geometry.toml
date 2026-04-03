@@ -32,7 +32,7 @@ cfl = 1.0
 
 [geometry]
 model = "vmec"
-vmec_file = "./wout_HSX_QHS_vacuum_ns201.nc"
+vmec_file = "./stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc"
 geometry_file = "./wout_HSX_QHS_vacuum_ns201.eik.nc"
 torflux = 0.64
 alpha = 0.0
