@@ -181,10 +181,10 @@ The Dockerfile uses a multi-stage build on a `ghcr.io/prefix-dev/pixi:noble` bas
 
 **Unit tests.** Test mathematical invariants specific to the stage. Examples:
 - Stage 1: force-balance residual decreases monotonically during convergence
-- Stage 2: Boozer transform preserves iota, |B| spectrum is complete
+- Stage 2: (|B|_VMEC - |B|_Boozer) / |B|_VMEC < eps; Boozer transform preserves iota
 - Stage 3 (`NEO`): epsilon_eff is non-negative, bounded
-- Stage 3 (`SFINCS`): transport matrix has expected symmetry properties
-- Stage 3 (`monkes`): D_ij matrix satisfies Onsager symmetry
+- Stage 3 (`SFINCS`): transport matrix has expected symmetry properties; full flux mode produces physically reasonable fluxes
+- Stage 3 (`monkes`): D_13 = D_31 (Onsager symmetry), D_11 > 0
 - Stage 4: growth rates are real-valued, fluxes are non-negative in steady state
 - Stage 5: profiles satisfy conservation (total particle/energy content)
 
