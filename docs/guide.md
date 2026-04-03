@@ -256,7 +256,7 @@ Output files should be inspected to verify that shapes, types (float32 vs float6
 
 ## Known Risks
 
-**1. Source-build fragility.** Some upstream codes are not on PyPI and must be built from source. These builds depend on the upstream repo's build system, which may change. Possible mitigations: pin to exact git commit SHAs in `pixi.toml`, test builds in CI, maintain fallback known-good revisions.
+**1. Source-build fragility.** Some upstream codes have no release versions and must be built from source. Pin to a tested git commit SHA in `pixi.toml`. Test builds in CI and maintain fallback known-good revisions.
 
 ## Coding Conventions
 
