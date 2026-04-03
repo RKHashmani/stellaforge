@@ -117,7 +117,7 @@ b.write_boozmn("boozmn_HSX_QHS_vacuum_ns201.nc")
 
 ---
 
-## Stage 3 -- Neoclassical (three parallel sub-stages)
+## Stage 3 -- Neoclassical (two parallel sub-stages)
 
 **Code:** sfincs_jax
 
@@ -144,5 +144,91 @@ pixi install --environment stage-3
 pixi run stage-3-neoclassical
 ```
 
+
+**code:** Monkes
+
+| Direction | Format               | Location                                                                                         |
+| --------- | -------------------- | ------------------------------------------------------------------------------------------------ |
+| **In**    | NetCDF `wout_*.nc`   | `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc`                   |
+| **In**    | NetCDF `boozmn_*.nc` | `mvp/stage2-boozer/booz_xform_jax/expected_output/boozmn_HSX_QHS_vacuum_ns201.nc`                |
+| **Out**   | HDF5 `D_ij.h5`       | `mvp/stage3-neoclassical/monkes/expected_output/Monoenergetic_database_VMEC_s_coordinate_HSX.h5` |
+
+> [!NOTE]
+> The inputs come from both Stage 1 and Stage 2. 
+
+#### How to Install
+```bash
+git clone https://github.com/eduardolneto/monkes.git
+cd monkes
+pip install .
+```
+
+> [!NOTE]
+> The instructions are correct, but it currently does not work. This will be fixed very soon. 
+#### How to Run
+
+Monkes is a little more involved. See `mvp/stage3-neoclassical/monkes/Test_Monoenergetic_database_VMEC_s_coordinate_HSX.py`
+
+We basically call it inside a python loop to use Monkes to generate a database across different radial positions, electric fields, and collisionality, but it uses the same 2 input files for the entire loop.
+
 ---
 
+## Stage 4 -- Turbulence
+
+**Code:** SPECTRAX-GK
+
+| Direction | Format             | Location                                                                           |
+| --------- | ------------------ | ---------------------------------------------------------------------------------- |
+| **In**    | NetCDF `wout_*.nc` | `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc`     |
+| **In**    | TOML config        | `mvp/stage4-turbulence/spectrax_gk/input/runtime_hsx_nonlinear_vmec_geometry.toml` |
+| **Out**   | Summary `JSON`     | `mvp/stage4-turbulence/spectrax_gk/expected_output/hsx_run.summary.json`           |
+| **Out**   | `csv`              | `mvp/stage4-turbulence/spectrax_gk/expected_output/hsx_run.diagnostics.csv`        |
+
+> [!NOTE]
+> The input also comes from Stage 1 output. The 2nd input file has a variable `vmec_file` that must point to the (relative or absolute) location of the Stage 1's NetCDF output file. 
+
+### How to Install
+```bash
+git clone https://github.com/uwplasma/SPECTRAX-GK.git
+cd SPECTRAX-GK
+pip install -e .
+```
+### How to Run
+
+```bash
+spectrax-gk run --config runtime_hsx_nonlinear_vmec_geometry.toml --out tools_out/hsx_run
+```
+
+---
+
+## Stage 5 -- Transport Solver
+
+**Code:** NEOPAX
+
+| Direction                                 | Format               | Location                                                                                         |
+| ----------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------ |
+| **In**                                    | NetCDF `wout_*.nc`   | `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc`                   |
+| **In**                                    | NetCDF `boozmn_*.nc` | `mvp/stage2-boozer/booz_xform_jax/expected_output/boozmn_HSX_QHS_vacuum_ns201.nc`                |
+| **In** (Only needed if `monkes` is used.) | HDF5 `D_ij.h5`       | `mvp/stage3-neoclassical/monkes/expected_output/Monoenergetic_database_VMEC_s_coordinate_HSX.h5` |
+| **Out**                                   | HDF5 `profiles_*.h5` | `mvp/stage5-transport/neopax/expected_output/NEOPAX_output.h5`                                   |
+> [!NOTE]
+> The inputs come from Stage 1, Stage 2, and Stage 3. 
+
+### How to Install
+```bash
+git clone https://github.com/uwplasma/NEOPAX.git
+cd NEOPAX 
+pip install .
+```
+### How to Run
+
+This is run inside a script. See `mvp/stage5-transport/neopax/run_NEOPAX.py` as a reference.
+
+> [!NOTE]
+> `NEOPAX`, being the final stage, has additional complexities and variabilities in the workflow.
+> 
+> For example, if `monkes` is used, then the script using `NEOPAX` won't constantly loop since `monkes` provides a database and does the loop before reaching Stage 5.
+> 
+> If `sfincs_jax` is used, then ideally, the script using NEOPAX runs a loop to optimize over different fluxes. While ideal, this is most computationally expensive.
+
+---
