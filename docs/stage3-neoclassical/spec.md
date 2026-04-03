@@ -2,40 +2,31 @@
 
 ## Overview
 
-Stage 3 computes neoclassical transport properties from the Boozer-coordinate equilibrium. It contains three sub-stages that can run in parallel, each serving a distinct role:
+Stage 3 computes neoclassical transport properties from the Boozer-coordinate equilibrium. It has three codes:
 
-1. **NEO / NEO_JAX** -- Computes effective ripple (epsilon_eff), a screening/optimization diagnostic. **NOT a transport state variable** -- does not feed into profile evolution.
-2. **SFINCS / sfincs_jax** -- Solves the full drift-kinetic equation for neoclassical particle flux, heat flux, bootstrap current, and ambipolar E_r. Direct transport input for Trinity3D.
-3. **MONKES** -- Builds a monoenergetic D_ij transport coefficient database. Direct input for NEOPAX (Stage 5).
+1. **`NEO` / `NEO_JAX`** -- Computes effective ripple (epsilon_eff), a screening/optimization diagnostic. **NOT a transport state variable** -- does not feed into profile evolution. Runs independently alongside whichever transport code is selected.
+2. **`SFINCS` / `sfincs_jax`** -- Solves the full drift-kinetic equation for neoclassical particle flux, heat flux, bootstrap current, and ambipolar E_r. Feeds `NEOPAX` (Stage 5).
+3. **`monkes`** -- Builds a monoenergetic D_ij transport coefficient database. Feeds `NEOPAX` (Stage 5).
 
-**Critical distinction:** NEO's epsilon_eff is a screening metric used for ranking configurations. SFINCS fluxes and MONKES D_ij coefficients are actual transport inputs consumed by Stage 5.
+**`sfincs_jax` and `monkes` are alternatives**, not parallel sub-stages. Only one is needed: `sfincs_jax` provides full drift-kinetic fluxes while `monkes` provides a monoenergetic D_ij database. Either can feed `NEOPAX` (Stage 5).
 
-**Position in pipeline:** NEO_JAX and MONKES receive `boozmn_*.nc` from Stage 2 (Boozer). sfincs_jax receives `wout_*.nc` directly from Stage 1 (Equilibrium). The three sub-stages fan in to Stage 5 (Transport). Stage 3 runs in parallel with Stage 4 (Turbulence).
+**Position in pipeline:** `NEO_JAX` and `monkes` receive `boozmn_*.nc` from Stage 2 (Boozer). `sfincs_jax` receives `wout_*.nc` directly from Stage 1 (Equilibrium). Stage 3 runs in parallel with Stage 4 (Turbulence).
 
 **Reference:** `stellarator_workflow.tex`, Sections 4.4-4.6; `stellarator_io_reference.tex`, Sections 3.4-3.6.
 
 ---
 
-## Sub-Stage 3a: NEO / NEO_JAX (Effective Ripple)
+## Sub-Stage 3a: `NEO` / `NEO_JAX` (Effective Ripple)
 
 ### Codes
 
 **NEO_JAX (Primary JAX):** <https://github.com/uwplasma/NEO_JAX>
 
-**NEO (Legacy, part of STELLOPT):** <https://github.com/PrincetonUniversity/STELLOPT>
-
-### Installation & Platform
-
-<!-- OWNER COMPLETES: Document installation steps for NEO_JAX and legacy NEO.
-     Include:
-     - Python version and JAX version requirements for NEO_JAX
-     - Fortran compiler and build instructions for NEO (from STELLOPT suite)
-     - pip/conda/pixi install commands for NEO_JAX
-     - Any platform-specific notes (macOS ARM, Linux GPU, etc.)
-     - How to verify a successful installation (e.g., a smoke-test command)
-     - Known dependency conflicts with other sub-stages -->
+**`NEO` (Legacy, part of `STELLOPT`):** <https://github.com/PrincetonUniversity/STELLOPT>
 
 ### Input Specification
+
+Reference: `stellarator_io_reference.tex`, Section 3.4.
 
 | Field | Type | Description | Source |
 |-------|------|-------------|--------|
@@ -44,17 +35,12 @@ Stage 3 computes neoclassical transport properties from the Boozer-coordinate eq
 
 #### Input Validation
 
-<!-- OWNER COMPLETES: Document input validation checks for NEO / NEO_JAX.
-     Include:
-     - Required fields in boozmn_*.nc and how to verify they exist
-     - Sanity checks on angular resolution parameters (theta_n, phi_n)
-     - Surface index validation (must be within the Boozer radial grid range)
-     - Fourier cutoff validation relative to Boozer spectrum resolution
-     - CALC_CUR switch: when is it appropriate to enable/disable?
-     - Error messages or exit codes for each validation failure
-     - Differences between NEO_JAX and legacy NEO input requirements -->
+> [!TODO]
+> Document input validation checks for NEO / NEO_JAX (required boozmn fields, resolution parameter ranges, surface index bounds, Fourier cutoff limits, CALC_CUR guidance, error codes, JAX vs. legacy differences).
 
 ### Output Specification
+
+Reference: `stellarator_io_reference.tex`, Section 3.4.
 
 **Primary output:** `neo_out.*` and `neolog.*`
 
@@ -72,24 +58,16 @@ Stage 3 computes neoclassical transport properties from the Boozer-coordinate eq
 | `barept` | 1D array | Perpendicular epsilon (bar) | Diagnostic |
 | `yps` | 1D array | Normalized toroidal flux | Coordinate |
 
-**NEO_JAX result objects:** `epsilon_effective`, `epsilon_effective_by_class`
+**`NEO_JAX` result objects:** `epsilon_effective`, `epsilon_effective_by_class`
 
 Optional outputs (if CALC_CUR=1): `neo_cur.*`, `current.dat`, `conver.dat`, `diagnostic.dat`, `diagnostic_add.dat`, `diagnostic_bigint.dat`
 
-**Role:** Screening/optimization diagnostic. Usually NO direct transport consumer. epsilon_eff is NOT what Trinity3D or NEOPAX advances in time.
+**Role:** Screening/optimization diagnostic. Usually NO direct transport consumer. epsilon_eff is NOT what `Trinity3D` or `NEOPAX` advances in time.
 
 #### Output Validation
 
-<!-- OWNER COMPLETES: Document output validation checks for NEO / NEO_JAX.
-     Include:
-     - Verify neo_out.* contains all expected fields with correct shapes
-     - Check that epstot is finite, non-NaN, and non-negative on all surfaces
-     - Physical range checks: epsilon_eff^{3/2} should be in [0, ~0.5] for reasonable configs
-     - Verify iota cross-checks against Stage 2 boozmn values within tolerance
-     - Check per-class contributions sum to epstot
-     - Convergence check: epstot should not change significantly with increased resolution
-     - Cross-code validation: NEO_JAX vs. legacy NEO agreement within tolerance
-     - Describe how validation results are logged (stdout, W&B, JSON summary) -->
+> [!TODO]
+> Document output validation checks for NEO / NEO_JAX (field presence and shapes, epstot finiteness and physical range, iota cross-check vs. Stage 2, per-class sum consistency, convergence criteria, cross-code agreement, logging strategy).
 
 ### Governing Equations
 
@@ -111,45 +89,9 @@ Total `epstot` is the sum over classes.
 
 **Reference:** `stellarator_workflow.tex`, Section 4.4.
 
-### Convergence & Validity
-
-<!-- OWNER COMPLETES: Document convergence behavior and validity criteria for NEO / NEO_JAX.
-     Include:
-     - How to assess convergence with respect to angular resolution (theta_n, phi_n)
-     - Convergence with respect to Fourier cutoffs
-     - How number of trapped-particle classes affects results
-     - Known failure modes (e.g., near-axis equilibria, very low aspect ratio)
-     - Recommended resolution settings for production runs vs. quick screening
-     - How to detect divergence or poor convergence at runtime
-     - Comparison between NEO_JAX and legacy NEO for validation -->
-
-### API Documentation
-
-<!-- OWNER COMPLETES: Document the Python API for NEO_JAX.
-     Include:
-     - Main entry point function(s) with full signatures and type hints
-     - How to call from Python with a boozmn_*.nc file path
-     - How to call from Python with an in-memory Boozer object (JAX arrays)
-     - Return type and how to access epsilon_effective and per-class results
-     - How to write results to neo_out.* files
-     - Example code snippet for a minimal end-to-end call
-     - Any configuration options beyond the control file parameters -->
-
-### Scripts & Workflows
-
-<!-- OWNER COMPLETES: Document the scripts for running Sub-Stage 3a.
-     Include:
-     - CLI invocation for NEO_JAX (command, required args, optional args)
-     - CLI invocation for legacy NEO (command, required args, optional args)
-     - Example neo_in control file with comments explaining each parameter
-     - How to run on a single boozmn file
-     - How to run in batch mode on multiple equilibria
-     - Output directory convention: {run_dir}/stage3_neoclassical/neo/
-     - How results connect to optimization (screening use, NOT Stage 5 input) -->
-
 ---
 
-## Sub-Stage 3b: SFINCS / sfincs_jax (Full Neoclassical)
+## Sub-Stage 3b: `SFINCS` / `sfincs_jax` (Full Neoclassical)
 
 ### Codes
 
@@ -157,19 +99,9 @@ Total `epstot` is the sum over classes.
 
 **SFINCS (Legacy):** <https://github.com/landreman/sfincs>
 
-### Installation & Platform
-
-<!-- OWNER COMPLETES: Document installation steps for sfincs_jax and legacy SFINCS.
-     Include:
-     - Python version and JAX version requirements for sfincs_jax
-     - Fortran/PETSc/MPI build requirements for legacy SFINCS
-     - pip/conda/pixi install commands for sfincs_jax
-     - PETSc version constraints and configuration flags for legacy SFINCS
-     - Any platform-specific notes (macOS ARM, Linux GPU, etc.)
-     - How to verify a successful installation (e.g., a smoke-test command)
-     - Known dependency conflicts with other sub-stages -->
-
 ### Input Specification
+
+Reference: `stellarator_io_reference.tex`, Section 3.5.
 
 | Field | Type | Description | Source |
 |-------|------|-------------|--------|
@@ -180,26 +112,19 @@ Key namelist parameters: species charges/masses, $\hat{n}_s$, $\hat{T}_s$, their
 
 #### Input Validation
 
-<!-- OWNER COMPLETES: Document input validation checks for SFINCS / sfincs_jax.
-     Include:
-     - Required namelist groups and their mandatory fields
-     - Species parameter validation (charges, masses, density/temperature consistency)
-     - Gradient sanity checks (sign conventions, physical range)
-     - Resolution parameter validation (Ntheta, Nzeta, Nxi, Nx ranges)
-     - Geometry source validation (verify boozmn file is readable and has required fields)
-     - E_r initial guess: guidance on choosing reasonable values
-     - Phi1 switch: when to enable and implications for output fields
-     - Error messages or exit codes for each validation failure
-     - Differences between sfincs_jax and legacy SFINCS input handling -->
+> [!TODO]
+> Document input validation checks for SFINCS / sfincs_jax (required namelist groups, species parameter consistency, gradient sign conventions, resolution parameter ranges, geometry source verification, E_r initial guess guidance, Phi1 switch implications, error codes, JAX vs. legacy differences).
 
 ### Output Specification
+
+Reference: `stellarator_io_reference.tex`, Section 3.5.
 
 **Primary output:** `sfincsOutput.h5` (HDF5)
 
 | Field | Type | Description | Used As |
 |-------|------|-------------|---------|
-| `particleFlux_vm_rN` | array (per species) | Particle flux (vm normalization, rN coord) | **Transport input** (Trinity3D) |
-| `heatFlux_vm_rN` | array (per species) | Heat flux (vm normalization, rN coord) | **Transport input** (Trinity3D) |
+| `particleFlux_vm_rN` | array (per species) | Particle flux (vm normalization, rN coord) | **Transport input** (`Trinity3D`) |
+| `heatFlux_vm_rN` | array (per species) | Heat flux (vm normalization, rN coord) | **Transport input** (`Trinity3D`) |
 | `particleFlux_vd_rN` | array | Particle flux (with Phi1 enabled) | Transport input (alt) |
 | `heatFlux_vd_rN` | array | Heat flux (with Phi1 enabled) | Transport input (alt) |
 | `FSABjHat` | array | Flux-surface averaged bootstrap current | Transport/equilibrium feedback |
@@ -207,24 +132,14 @@ Key namelist parameters: species charges/masses, $\hat{n}_s$, $\hat{T}_s$, their
 | `Phi1Hat` | array | First-order electrostatic potential | Diagnostic |
 | `transportMatrix` | 2D array | Full transport matrix | Analysis |
 
-Also: matching momentum-flux arrays, classical fluxes, optional full-f/delta-f exports, `*_vs_x` lineouts. sfincs_jax additionally exposes in-memory result dicts and can write `.npy` state vectors.
+Also: matching momentum-flux arrays, classical fluxes, optional full-f/delta-f exports, `*_vs_x` lineouts. `sfincs_jax` additionally exposes in-memory result dicts and can write `.npy` state vectors.
 
-**Handoff to Trinity3D:** The Trinity3D adapter reads `particleFlux_vm_rN` and `heatFlux_vm_rN` when `includePhi1` is off, and `particleFlux_vd_rN` / `heatFlux_vd_rN` when on.
+**Handoff to `Trinity3D`:** The `Trinity3D` adapter reads `particleFlux_vm_rN` and `heatFlux_vm_rN` when `includePhi1` is off, and `particleFlux_vd_rN` / `heatFlux_vd_rN` when on.
 
 #### Output Validation
 
-<!-- OWNER COMPLETES: Document output validation checks for SFINCS / sfincs_jax.
-     Include:
-     - Verify sfincsOutput.h5 contains all required fields with correct shapes
-     - Check that fluxes are finite and non-NaN for all species
-     - Ambipolarity check: sum of Z_s * particleFlux across species should be near zero
-     - Bootstrap current sign and magnitude sanity check
-     - Transport matrix symmetry checks (Onsager symmetry: L_ij = L_ji)
-     - Physical range checks for fluxes (order-of-magnitude expectations)
-     - Convergence check: fluxes should not change significantly with increased resolution
-     - Cross-code validation: sfincs_jax vs. legacy SFINCS agreement within tolerance
-     - Verify Phi1 outputs are present when includePhi1 is enabled
-     - Describe how validation results are logged (stdout, W&B, JSON summary) -->
+> [!TODO]
+> Document output validation checks for SFINCS / sfincs_jax (field presence and shapes, flux finiteness, ambipolarity check, bootstrap current sanity, Onsager symmetry of transport matrix, physical range checks, convergence criteria, cross-code agreement, Phi1 output presence, logging strategy).
 
 ### Governing Equations
 
@@ -240,71 +155,21 @@ When Phi1 is included, coupled to quasineutrality.
 
 **Reference:** `stellarator_workflow.tex`, Section 4.5.
 
-### Convergence & Validity
-
-<!-- OWNER COMPLETES: Document convergence behavior and validity criteria for SFINCS / sfincs_jax.
-     Include:
-     - Resolution parameters and their convergence behavior (Ntheta, Nzeta, Nxi, Nx)
-     - Typical convergence order: which parameter needs the most points?
-     - How to perform a convergence scan (vary one parameter at a time)
-     - Known failure modes (e.g., very low collisionality, strong E_r shear)
-     - Impact of collision model choice on results
-     - When Phi1 is needed vs. when it can be neglected
-     - Recommended resolution settings for production runs vs. quick screening
-     - How to detect solver failure or poor convergence at runtime
-     - Comparison between sfincs_jax and legacy SFINCS for validation -->
-
-### API Documentation
-
-<!-- OWNER COMPLETES: Document the Python API for sfincs_jax.
-     Include:
-     - Main entry point function(s) with full signatures and type hints
-     - How to call from Python with a boozmn_*.nc file path
-     - How to call from Python with an in-memory Boozer object (JAX arrays)
-     - Return type and how to access flux, bootstrap current, and transport matrix results
-     - How to write results to sfincsOutput.h5
-     - How to export .npy state vectors for warm-start / checkpointing
-     - Example code snippet for a minimal end-to-end call
-     - Namelist generation utilities (if any)
-     - How to perform an E_r scan programmatically -->
-
-### Scripts & Workflows
-
-<!-- OWNER COMPLETES: Document the scripts for running Sub-Stage 3b.
-     Include:
-     - CLI invocation for sfincs_jax (command, required args, optional args)
-     - CLI invocation for legacy SFINCS (command, MPI launch, required args)
-     - Example input.namelist with comments explaining each group and key parameters
-     - How to run on a single surface
-     - How to run a radial scan (multiple surfaces)
-     - How to run an E_r scan for ambipolar root-finding
-     - Output directory convention: {run_dir}/stage3_neoclassical/sfincs/
-     - How results connect to Stage 5 (Trinity3D adapter reads which fields) -->
-
 ---
 
-## Sub-Stage 3c: MONKES (Monoenergetic Coefficients)
+## Sub-Stage 3c: `monkes` (Monoenergetic Coefficients)
 
 ### Codes
 
-**MONKES (JAX-native):** <https://github.com/f0uriest/monkes>
-
-### Installation & Platform
-
-<!-- OWNER COMPLETES: Document installation steps for MONKES.
-     Include:
-     - Python version and JAX version requirements
-     - pip/conda/pixi install commands
-     - Any platform-specific notes (macOS ARM, Linux GPU, etc.)
-     - How to verify a successful installation (e.g., a smoke-test command)
-     - Known dependency conflicts with other sub-stages
-     - DESC dependency: is DESC required as a geometry backend? -->
+**`monkes` (JAX-native):** <https://github.com/f0uriest/monkes>
 
 ### Input Specification
 
+Reference: `stellarator_io_reference.tex`, Section 3.6.
+
 | Field | Type | Description | Source |
 |-------|------|-------------|--------|
-| Field object | DESC equilibrium or equivalent | Magnetic field representation at a single surface | Stage 1 (DESC) or Stage 2 |
+| Field object | `DESC` equilibrium or equivalent | Magnetic field representation at a single surface | Stage 1 (`DESC`) or Stage 2 |
 | Species Maxwellians | in-memory | Species definitions | User-specified |
 | E_r | scalar (float) | Radial electric field | User-specified / scan |
 | Speed / nu | scalar (float) | Particle speed / collisionality | User-specified / scan |
@@ -314,18 +179,12 @@ In database-building mode: the solve is repeated over collisionality (nu_v) and 
 
 #### Input Validation
 
-<!-- OWNER COMPLETES: Document input validation checks for MONKES.
-     Include:
-     - Field object validation: required attributes and methods
-     - Species Maxwellian parameter validation (temperature, density, charge, mass)
-     - E_r range and grid spacing guidance for database building
-     - Collisionality (nu_v) range and grid spacing guidance for database building
-     - Pitch-angle resolution: minimum and recommended values
-     - Surface selection: how to specify which flux surface to compute on
-     - Error messages or exit codes for each validation failure
-     - How MONKES handles DESC equilibria vs. boozmn-based equilibria -->
+> [!TODO]
+> Document input validation checks for monkes (field object attributes, species parameter validation, E_r and nu_v grid spacing for database building, pitch-angle resolution bounds, surface selection, error codes, DESC vs. boozmn geometry handling).
 
 ### Output Specification
+
+Reference: `stellarator_io_reference.tex`, Section 3.6.
 
 **Core output:** D_ij transport matrix (in-memory or HDF5)
 
@@ -343,22 +202,12 @@ In database-building mode: the solve is repeated over collisionality (nu_v) and 
 | `f` | array | Perturbed distribution function | Analysis only |
 | `s` | array | Source vector | Analysis only |
 
-**Key handoff:** NEOPAX's database reader consumes the **reduced subset**: D11, D13, D33, Er, Er_tilde, drds, rho, nu_v. The full distribution f and source s are NOT part of that handoff.
+**Key handoff:** `NEOPAX`'s database reader consumes the **reduced subset**: D11, D13, D33, Er, Er_tilde, drds, rho, nu_v. The full distribution f and source s are NOT part of that handoff.
 
 #### Output Validation
 
-<!-- OWNER COMPLETES: Document output validation checks for MONKES.
-     Include:
-     - Verify D_ij matrix contains all required fields with correct shapes
-     - Check that D11, D13, D33 are finite and non-NaN across the full (nu_v, Er) grid
-     - Physical range checks: D11 > 0 (positive-definite diffusion), D33 > 0
-     - Onsager symmetry check: D_ij = D_ji within tolerance
-     - Check limiting behavior: D11 ~ 1/nu at low collisionality (1/nu regime)
-     - Check plateau regime behavior at intermediate collisionality
-     - Verify grid coverage: nu_v and Er grids must span the range needed by NEOPAX
-     - Database completeness check: no missing grid points
-     - Convergence check: D_ij should not change significantly with increased Legendre resolution
-     - Describe how validation results are logged (stdout, W&B, JSON summary) -->
+> [!TODO]
+> Document output validation checks for monkes (field presence and shapes, D_ij finiteness across full grid, D11/D33 positivity, Onsager symmetry, 1/nu and plateau limiting behavior, grid coverage for NEOPAX, database completeness, Legendre convergence, logging strategy).
 
 ### Governing Equations
 
@@ -376,49 +225,54 @@ $$D_{ij} = \begin{pmatrix} D_{11} & D_{12} & D_{13} \\ D_{21} & D_{22} & D_{23} 
 
 **Reference:** `stellarator_workflow.tex`, Section 4.6.
 
-### Convergence & Validity
+---
 
-<!-- OWNER COMPLETES: Document convergence behavior and validity criteria for MONKES.
-     Include:
-     - How to assess convergence with respect to Legendre mode count
-     - How to assess convergence with respect to spatial resolution (theta, zeta)
-     - Typical convergence behavior across different collisionality regimes
-     - Known failure modes (e.g., extremely low collisionality, very strong E_r)
-     - Recommended resolution settings for production database building vs. quick checks
-     - How to detect solver failure or poor convergence at runtime
-     - Validation against published monoenergetic coefficient databases -->
+## Installation & Platform
 
-### API Documentation
+**`sfincs_jax`:** Install via the Pixi environment. From inside `mvp/`:
 
-<!-- OWNER COMPLETES: Document the Python API for MONKES.
-     Include:
-     - Main entry point function(s) with full signatures and type hints
-     - How to construct the Field object from a DESC equilibrium
-     - How to construct the Field object from a boozmn_*.nc file (if supported)
-     - How to specify species and scanning parameters
-     - Return type and how to access D_ij matrix elements
-     - How to build a full (nu_v, Er) database programmatically
-     - How to write the database to HDF5 in the format NEOPAX expects
-     - Example code snippet for a minimal single-point solve
-     - Example code snippet for building a full database -->
+```
+pixi install --environment stage-3
+```
 
-### Scripts & Workflows
+See `docs/mvp-pipeline.md` for run commands and I/O details.
 
-<!-- OWNER COMPLETES: Document the scripts for running Sub-Stage 3c.
-     Include:
-     - CLI invocation for MONKES (command, required args, optional args)
-     - How to run a single-point solve
-     - How to run a database-building scan over (nu_v, Er) grids
-     - Grid spacing recommendations for the database
-     - Output directory convention: {run_dir}/stage3_neoclassical/monkes/
-     - Output file naming convention for the database
-     - How results connect to Stage 5 (NEOPAX database reader interface) -->
+> [!TODO]
+> Document installation instructions and platform notes for `NEO_JAX`, `NEO`, `monkes`, and `SFINCS`.
 
 ---
 
-## Stage-Wide Sections
+## Convergence & Validity
 
-The following sections apply to Stage 3 as a whole, covering all three sub-stages.
+> [!TODO]
+> Document convergence behavior, known failure modes, and recommended tolerances for all three sub-stages.
+
+---
+
+## API Documentation
+
+> [!TODO]
+> Document key entry points, configuration parameters, and usage examples for all three sub-stages.
+
+---
+
+## Scripts & Workflows
+
+**`sfincs_jax` (via Pixi):** From inside `mvp/`:
+
+After editing `equilibriumFile` in `mvp/stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201` to point to the Stage 1 output:
+
+```
+pixi run stage-3-neoclassical
+```
+
+**Input:** `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc` + `mvp/stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201`
+**Output:** `mvp/stage3-neoclassical/sfincs_jax/expected_output/sfincsOutput.h5`
+
+See `docs/mvp-pipeline.md` for full I/O details.
+
+> [!TODO]
+> Add standalone run scripts and workflows for `NEO_JAX`, `NEO`, `monkes`, and `SFINCS`.
 
 ---
 
@@ -426,107 +280,41 @@ The following sections apply to Stage 3 as a whole, covering all three sub-stage
 
 **Project:** `stellaforge-stage3-neoclassical`
 
-<!-- OWNER COMPLETES: Document the Weights & Biases tracking setup for all three sub-stages.
-     Include:
-     - Metric groups: separate metric prefixes or groups for NEO_JAX, sfincs_jax, and MONKES
-     - NEO_JAX metrics: epstot per surface, per-class contributions, wall-clock time,
-       resolution parameters used, convergence indicators
-     - sfincs_jax metrics: particle flux, heat flux, bootstrap current per species,
-       E_r root, solver iterations, wall-clock time, resolution parameters
-     - MONKES metrics: D11/D13/D33 over (nu_v, Er) grid, solver iterations per grid point,
-       wall-clock time, Legendre resolution used
-     - Artifacts to log per sub-stage: output files, convergence plots, input configs
-     - Run naming convention (should encode which sub-stage and which equilibrium)
-     - Cross-code comparison panels: NEO_JAX vs. NEO, sfincs_jax vs. SFINCS
-     - Dashboard layout recommendations (sub-stage tabs or grouped panels)
-     - Integration with Stage 2 W&B project for traceability
-     - Integration with Stage 5 W&B project for end-to-end tracking -->
+> [!TODO]
+> Set up W&B tracking for all three sub-stages.
 
 ---
 
 ## Container Specification (Phase 2)
 
-<!-- OWNER COMPLETES: Document the Docker container(s) for Stage 3.
-     Key design decision: one container for all three sub-stages or separate containers?
-     For each container, include:
-     - Base image (e.g., python:3.11-slim, nvidia/cuda for GPU JAX)
-     - Key dependencies and their pinned versions (JAX, DESC if needed by MONKES, etc.)
-     - Entry point command(s) -- one per sub-stage or a dispatcher
-     - Volume mount expectations:
-       - Input from {run_dir}/stage2_boozer/ (boozmn_*.nc)
-       - Output to {run_dir}/stage3_neoclassical/neo/, sfincs/, monkes/ respectively
-     - Environment variables (e.g., JAX_PLATFORM_NAME, W&B API key)
-     - Health check or smoke-test command per sub-stage
-     - Expected image size
-     - GPU vs. CPU variants
-     - Parallelism: how to launch all three sub-stages concurrently within the pipeline -->
+**`sfincs_jax`:** Built from the single templated `mvp/Dockerfile` using build arguments:
+
+```
+docker build --build-arg ENVIRONMENT=stage-3 mvp/        # CPU
+docker build --build-arg ENVIRONMENT=stage-3-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+```
+
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-3-cpu` and `stage-3-gpu`. CI builds via `.github/workflows/docker.yml`.
+
+See [guide](../guide.md#container-architecture) for full architecture details.
+
+> [!TODO]
+> Define container specifications for `NEO_JAX`, `NEO`, `monkes`, and `SFINCS`.
 
 ---
 
 ## Tests (Phase 2)
 
-<!-- OWNER COMPLETES: Document the test plan for Stage 3 (all sub-stages).
+See [guide](../guide.md#writing-tests) for examples.
 
-     NEO_JAX unit tests:
-     - epsilon_eff computation for known analytical cases
-     - Field-line integral accuracy
-     - Trapped-particle class identification
-     - Regression tests against known-good neo_out files for reference equilibria
-     - Cross-code validation: NEO_JAX vs. legacy NEO agreement within tolerance
-
-     sfincs_jax unit tests:
-     - Transport matrix symmetry (Onsager relations)
-     - Ambipolarity of particle fluxes
-     - Bootstrap current sign and magnitude for known cases
-     - Regression tests against known-good sfincsOutput.h5 for reference equilibria
-     - Cross-code validation: sfincs_jax vs. legacy SFINCS agreement within tolerance
-
-     MONKES unit tests:
-     - D_ij positive-definiteness (D11 > 0, D33 > 0)
-     - Onsager symmetry of coefficient matrix
-     - Limiting behavior in 1/nu and plateau regimes
-     - Regression tests against published monoenergetic coefficient databases
-     - Convergence with Legendre mode count
-
-     Integration tests (Stage 3 -> Stage 5):
-     - Verify NEO_JAX outputs can be read by downstream screening/optimization tools
-     - Verify sfincsOutput.h5 can be read by Trinity3D adapter
-     - Verify MONKES D_ij database can be read by NEOPAX database reader
-     - Verify the reduced NEOPAX subset (D11, D13, D33, Er, Er_tilde, drds, rho, nu_v)
-       is complete and correctly formatted
-
-     Edge case tests:
-     - Single surface, all surfaces, minimal resolution
-     - Extreme collisionality values
-     - Zero E_r and strong E_r limits
-
-     Performance benchmarks:
-     - Wall-clock time for standard test cases per sub-stage
-     - Database-building time for MONKES at production grid density -->
+> [!TODO]
+> Write unit, regression, and integration tests for all three sub-stages.
 
 ---
 
 ## Claude Skills
 
-<!-- OWNER COMPLETES: Document the Claude Code skills for Stage 3.
+See [guide](../guide.md#step-7-create-claude-skills) for skill types.
 
-     Dev skills (one per sub-stage):
-     - NEO_JAX dev skill: running NEO_JAX, debugging epsilon_eff computations,
-       interpreting per-class contributions, convergence analysis, comparing
-       NEO_JAX vs. legacy NEO results
-     - sfincs_jax dev skill: running sfincs_jax, debugging drift-kinetic solves,
-       interpreting flux and bootstrap current results, E_r root-finding,
-       convergence analysis, comparing sfincs_jax vs. legacy SFINCS results
-     - MONKES dev skill: running MONKES, building D_ij databases, debugging
-       solver convergence, interpreting coefficient behavior across regimes,
-       validating database completeness for NEOPAX
-
-     Operational skills (one per sub-stage or combined):
-     - Running the container(s), validating outputs, troubleshooting failures
-     - Verifying that outputs are valid inputs for Stage 5 consumers
-     - Monitoring database-building progress for MONKES
-
-     For each skill, specify:
-     - What context the skill needs (file paths, config, common error patterns)
-     - Skill trigger conditions (when should each skill activate?)
-     - Key domain knowledge the skill should encode (physics, numerics, common pitfalls) -->
+> [!TODO]
+> Create development and operational Claude skills for all three sub-stages.

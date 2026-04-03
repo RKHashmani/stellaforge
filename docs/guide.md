@@ -1,0 +1,273 @@
+# StellaForge Guide
+
+## Project Overview
+
+StellaForge implements the stellarator design workflow described in the companion `stellarator_workflow/` submodule as a containerized, orchestrated software pipeline. The physics and I/O contracts are defined in two TeX manuscripts:
+- `stellarator_workflow.tex` -- governing equations and code-by-code details
+- `stellarator_io_reference.tex` -- input/output contracts and handoff specifications
+
+**Goal:** A working forward pass -- a single traversal of the pipeline from boundary Fourier coefficients and profile guesses through to transport-consistent profiles and fusion-power metrics (P_fus, Q). This is distinct from closing the optimization loop, which would feed updated pressure and current back to the equilibrium stage.
+
+**JAX-first strategy:** The pipeline prioritizes JAX-native implementations for differentiability and tight integration: `vmec_jax` -> `booz_xform_jax` -> (`sfincs_jax` / `monkes`) -> `SPECTRAX-GK` -> `NEOPAX`. Other codes (`VMEC++`, `BOOZ_XFORM`, `NEO_JAX`, `NEO`, `SFINCS`, `GX`, `GENE`, `Trinity3D`) are swappable alternatives.
+
+## Pipeline Architecture
+
+### Stage Summary
+
+> [!NOTE]
+> The input/output artifacts shown reflect the JAX-primary implementations. Alternative codes may use different file formats or field names; see each stage's `spec.md` for details.
+
+| Stage | Physics | JAX Primary | Alternatives | Input Artifacts | Output Artifacts |
+|-------|---------|-------------|--------------|-----------------|------------------|
+| 1. Equilibrium | Ideal-MHD force balance | `vmec_jax`, `DESC` | `VMEC++` | INDATA/JSON boundary coefficients, pressure/iota/current coefficients, PHIEDGE | `wout_*.nc` (NetCDF) |
+| 2. Boozer Transform | Coordinate transform to Boozer angles | `booz_xform_jax` | `BOOZ_XFORM` | `wout_*.nc` | `boozmn_*.nc` (NetCDF) |
+| 3. Neoclassical | Effective ripple, drift-kinetic transport, monoenergetic coefficients | `NEO_JAX`, `sfincs_jax`, `monkes` | `NEO`, `SFINCS` | `NEO`/`monkes`: `boozmn_*.nc`; `SFINCS`: `wout_*.nc` + input file | `neo_out.*`, `sfincsOutput.h5`, D_ij HDF5 database |
+| 4. Turbulence | Delta-f gyrokinetic equation | `SPECTRAX-GK` | `GX`, `GENE` | Geometry + species profiles/gradients | gamma, omega, heat/particle flux (NetCDF/CSV) |
+| 5. Transport | 1D conservation laws for n_s, p_s | `NEOPAX` | `Trinity3D` | D_ij database + geometry + fluxes | n(r), T(r), E_r(r), P_fus, Q (HDF5/NetCDF) |
+
+### Pipeline DAG
+
+> [!TODO]
+> Define Minimum Viable Pipeline (MVP) DAG.
+
+### Interface Contracts
+
+Currently, most inter-stage communication is **file-based** using standard physics file formats:
+- **NetCDF** (`.nc`): equilibrium (`wout_*.nc`), Boozer (`boozmn_*.nc`), turbulence outputs
+- **HDF5** (`.h5`): neoclassical outputs (`sfincsOutput.h5`), `monkes` D_ij databases, `NEOPAX` profiles
+
+Snakemake rules define which files connect which stages. Each stage's `spec.md` is the authoritative source for required/optional fields in its output files. Where alternative implementations use different file formats or field names, a wrapper or adapter layer will be needed to translate between them.
+
+**Output directory convention:** Each stage writes to `{run_dir}/stage{N}_{name}/` on a shared volume mount.
+
+**Key points** from the TeX manuscripts:
+
+1. **Screening-only outputs vs. transport state variables.** `NEO_JAX`'s epsilon_eff is central to ranking candidate geometries but is NOT advanced by a transport solver. It should not be wired as a transport input.
+2. **Dual-role outputs.** Heat/particle flux from `SPECTRAX-GK` and neoclassical flux from `SFINCS` are simultaneously optimization objectives (to minimize) AND direct numerical inputs for transport profile evolution.
+3. **`monkes` -> `NEOPAX` handoff.** `NEOPAX`'s database reader consumes a reduced subset of the `monkes` D_ij HDF5 output (`D11`, `D13`, `D33`, `Er`, `Er_tilde`, `drds`, `rho`, `nu_v`). Agreement on exact field names and shapes is required.
+4. **Turbulence coupling.** `NEOPAX` has turbulence-coupling utilities, but the public examples center on the neoclassical reduced model from `monkes`. The `SPECTRAX-GK` -> `NEOPAX` path (Stage 4 -> Stage 5) is not yet the default.
+
+### Swappability Patterns
+
+The pipeline should eventually support config-driven implementation swapping. Possible levels of swappability:
+
+- **Single-stage swap.** Change `config.yaml` to select a different implementation for one stage. The output file format should match what downstream stages expect. Example: swap Stage 4 from `SPECTRAX-GK` to `GX`.
+
+- **Multi-stage swap.** A single combined Snakemake rule replaces multiple individual stage rules. It should produce all output files that downstream stages expect. Example: `DESC` can perform both equilibrium solving and Boozer transformation internally, replacing Stages 1 and 2 with a single rule.
+
+- **End-to-end swap.** The entire pipeline DAG is replaced by a single rule. Useful for an all-in-one differentiable pipeline or a completely different solver chain.
+
+## Getting Started
+
+1. Clone the repository and initialize submodules:
+   ```bash
+   git clone https://github.com/RKHashmani/StellaForge.git
+   cd StellaForge
+   git submodule update --init --recursive
+   ```
+
+2. Read this guide for the overall architecture and workflow.
+
+3. Find the relevant stage specification: `docs/stage{N}-{name}/spec.md`
+
+4. Read the project coding standards: `CLAUDE.md`
+
+5. Review the reference TeX manuscripts in `stellarator_workflow/` for physics context:
+   - `stellarator_workflow.tex` -- governing equations and code details
+   - `stellarator_io_reference.tex` -- I/O contracts and handoff specifications
+
+6. Review `docs/mvp-pipeline.md` for the MVP I/O reference and Pixi install/run commands.
+
+## Phase 1: Document & Run
+
+Each stage has one owner responsible for their stage end-to-end. Each stage's `spec.md` has pre-populated sections (extracted from the TeX manuscripts) and clearly marked "TO BE COMPLETED" sections to fill in.
+
+Work through these steps in order. Each step should result in updates to the stage's `spec.md`.
+
+### Step 1: Install and Run the Primary Code
+
+- Install the primary code using the Pixi environment for the stage (see `mvp/pixi.toml` and `docs/mvp-pipeline.md` for install/run commands)
+- If the code is not yet in a Pixi environment, ensure it can be installed via conda-forge or PyPI, add it to the relevant `pixi.toml`, and regenerate the lock file
+- Get it running locally on a reference case
+- Document any installation issues, version requirements, or platform-specific notes
+- Fill in the "Installation & Platform" section of the relevant spec
+
+### Step 2: Run a Reference Case and Capture I/O
+
+- Run the code on a standard test case (e.g., a known stellarator configuration)
+- Capture the actual input and output files
+- Inspect the output files to understand their structure. For example:
+  - For NetCDF: `ncdump -h output_file.nc` (shows all variables, dimensions, attributes)
+  - For HDF5: `h5dump -H output_file.h5` (shows structure without data)
+- Document any change in output file format from the MVP.  
+
+### Step 3: Document the API
+
+- Document the main entry points, their parameters, and configuration options
+- Provide programmatic usage examples in Python/JAX
+- Fill in the "API Documentation" section of the relevant spec
+
+### Step 4: Document Convergence & Validity
+
+- Identify input configurations that are known to converge (cite specific stellarator configs if possible)
+- Identify configurations that fail or diverge, optionally identify why. 
+- Document convergence criteria and tolerances
+- Note known numerical edge cases
+- Fill in the "Convergence & Validity" section of the relevant spec
+
+### Step 5: Write Example Scripts
+
+- Provide scripts that demonstrate how to run the code standalone (CLI and Python)
+- Include sample input data or instructions for obtaining it
+- Document common debugging workflows
+- Fill in the "Scripts & Workflows" section of the relevant spec
+
+### Step 6: Set Up W&B Tracking
+
+> [!TODO]
+> Set up W&B tracking once stages are operational.
+
+Conventions:
+- **Project name:** `stellaforge-stage{N}-{name}` (e.g., `stellaforge-stage1-equilibrium`)
+- **Run naming:** `{code}_{config}_{timestamp}` (e.g., `vmec_jax_qa_2026-04-01T12:00`)
+- **Metrics to log:** Stage-specific convergence metrics, runtime, key physics outputs (see the spec for guidance)
+- Create a dashboard with the most important panels for the stage
+- Fill in the "W&B Tracking" section of the relevant spec
+
+### Step 7: Create Claude Skills
+
+> [!TODO]
+> Create Claude skills once stages are operational.
+
+Two types of skills per stage:
+
+**Development skill** (helps developers work on the stage): installation, debugging, output interpretation, physics context.
+
+**Operational skill** (helps operators run the stage in the pipeline): container builds, test suite, output validation, W&B metrics.
+
+Place skills in the stage's docs directory (e.g., `docs/stage1-equilibrium/skills/`). Fill in the "Claude Skills" section of the relevant spec.
+
+## Phase 2: Containerize & Test
+
+After Phase 1 is complete for a stage, move to containerization and testing.
+### Container Architecture
+
+StellaForge is a **recipe repo**: it contains everything needed to build and run the containerized pipeline, but does not contain the upstream solver code itself.
+
+**Pixi-based environments.** Dependencies are managed through `pixi.toml` files, e.g., `mvp/pixi.toml` and locked in `pixi.lock` files, e.g., `mvp/pixi.lock`. Stages with Pixi environments defined have named environments (e.g., `stage-1`, `stage-1-gpu`) that fully specify the dependency stack.
+
+**Single templated Dockerfile.** There is one shared `Dockerfile`, e.g. `mvp/Dockerfile` that uses build arguments to select the target environment at build time:
+- `ENVIRONMENT` -- the Pixi environment name (e.g., `stage-1`, `stage-2-gpu`). Must be passed explicitly when building locally: `docker build --build-arg ENVIRONMENT=stage-1 mvp/`
+- `CUDA_VERSION` -- set for GPU builds (e.g., `12`), left empty for CPU builds
+
+The Dockerfile uses a multi-stage build on a `ghcr.io/prefix-dev/pixi:noble` base image. See `mvp/Dockerfile` for implementation details.
+
+**Container images** are published to GHCR at `ghcr.io/rkhashmani/stellaforge`. For MVP, the tags follow the pattern `stage-{N}-cpu` / `stage-{N}-gpu` (e.g., `stage-1-cpu`). CI builds all stage variants from the single Dockerfile using a GitHub Actions matrix. See `.github/workflows/docker.yml` and `.github/actions/build-docker/action.yml` for the CI setup.
+
+**Adding or updating a dependency:**
+1. Update the relevant `pixi.toml` (add/change the dependency or git rev)
+2. Run `pixi install` (without `--locked`) to regenerate the lock file
+3. Commit both the `pixi.toml` and `pixi.lock`
+4. CI rebuilds affected container images on merge
+
+### Verify Container I/O
+
+- Build and run the container locally
+- Verify it can read input files from a mounted volume
+- Verify it writes output files to the expected location on the shared volume
+- Verify the output directory follows the naming convention: `{run_dir}/stage{N}_{name}/`
+
+### Writing Tests
+
+**Unit tests.** Test mathematical invariants specific to the stage. Examples:
+- Stage 1: force-balance residual decreases monotonically during convergence
+- Stage 2: (|B|_VMEC - |B|_Boozer) / |B|_VMEC < eps; Boozer transform preserves iota
+- Stage 3 (`NEO`): epsilon_eff is non-negative, bounded
+- Stage 3 (`SFINCS`): transport matrix has expected symmetry properties; full flux mode produces physically reasonable fluxes
+- Stage 3 (`monkes`): D_13 = D_31 (Onsager symmetry), D_11 > 0
+- Stage 4: growth rates are real-valued, fluxes are non-negative in steady state
+- Stage 5: profiles satisfy conservation (total particle/energy content)
+
+Place tests in `tests/stage{N}-{name}/`.
+
+**Regression tests.** Save known-good output files from a reference case. Write tests that compare new outputs against these baselines using explicit tolerances: `np.testing.assert_allclose(actual, expected, rtol=1e-6)`.
+
+**Integration tests.** Verify that the stage's output is valid input for its downstream consumers. For example:
+- Stage 1: verify `wout_*.nc` can be read by `booz_xform_jax` (Stage 2), `sfincs_jax` (Stage 3), and `SPECTRAX-GK` (Stage 4)
+- Stage 2: verify `boozmn_*.nc` can be read by `NEO_JAX` and `monkes` (Stage 3)
+- Stage 3: verify `sfincsOutput.h5` (if using `sfincs_jax`) or `D_ij.h5` (if using `monkes`) can be read by `NEOPAX` (Stage 5)
+- Stage 4: verify flux CSV output can be consumed by `NEOPAX` (Stage 5)
+- Stage 5: verify end-to-end output (`profiles.h5`: n(r), T(r), E_r(r), P_fus, Q) is produced correctly
+- Stage 5 → Stage 1: verify updated profiles from Stage 5 can be fed back as input to Stage 1 to close the optimization loop
+
+Consult plasma experts for additional details.
+### Acceptance Criteria
+
+A stage is "done" for Phase 2 when:
+- All unit tests pass
+- All regression tests pass within tolerances
+- Integration tests with adjacent stages pass
+- Container builds and runs successfully
+- W&B tracking is functional
+- All "TO BE COMPLETED" sections in the spec are filled in
+
+## Phase 3: Integrate
+
+When a stage completes Phase 2 (containerized, tested, and producing valid output), the workflow engineer integrates it into the Snakemake pipeline. This is an ongoing process and stages are integrated as they become ready.
+
+### Adding a Stage to the Snakemake DAG
+
+> [!TODO]
+> Define the process for adding a stage to the Snakemake DAG.
+
+**Design points to keep in mind:**
+- Stages 3 and 4 run in parallel after Stage 2; Stage 3's `NEO_JAX` also runs parallel with the main process (`sfincs_jax` or `monkes`)
+- `NEO_JAX`'s epsilon_eff is a screening metric only -- it should not be wired as a dependency for Stage 5
+
+### Config-Driven Selection
+
+> [!TODO]
+> Define the config schema and rule-selection logic.
+
+The pipeline should have a configuration file (e.g., `config.yaml`) at the repo root that controls which implementation is used per stage, stage-specific parameters, and resource requirements.
+
+### Integration Testing
+
+When integrating a new stage or implementation:
+
+- **Stage-boundary tests:** Feed known-good output from stage N to stage N+1 and verify physically reasonable results.
+- **End-to-end test:** When all stages are integrated, run the full forward pass from a known boundary configuration and compare final outputs (P_fus, Q, profiles) against baselines with explicit tolerances.
+- **Swappability tests:** After swapping an implementation, verify the pipeline still produces valid output.
+
+### Pipeline-Level W&B
+
+> [!TODO]
+> Set up pipeline-level W&B aggregation.
+
+- **Project:** `stellaforge-pipeline`
+- Aggregate per-stage metrics, track implementation selections, total runtime, and final physics outputs (P_fus, Q, profiles).
+
+## How to Document I/O
+
+> [!TODO]
+> A standard format for documenting I/O across stages is to be defined.
+
+Output files should be inspected to verify that shapes, types (float32 vs float64), units, and coordinate conventions match between the output and the next stage's expected input.
+
+## Known Risks
+
+**1. Source-build fragility.** Some upstream codes have no release versions and must be built from source. Pin to a tested git commit SHA in `pixi.toml`. Test builds in CI and maintain fallback known-good revisions.
+
+## Coding Conventions
+
+Key points for stage work:
+
+- No cross-stage Python imports during Phase 1: all inter-stage communication is through files (e.g. NetCDF/HDF5). This is necessary to maintain swappability.
+- Follow PEP 8 with 120-char line width
+- Add type hints to all function signatures
+- Use NumPy-style docstrings with equation references
+- Use `logging` module, not `print()` -- logging supports severity levels, can be redirected to files, and is silenceable in production without modifying code
+- Seed all RNGs for reproducibility
+- Save configuration alongside outputs
+- Guard against numerical edge cases -- division by zero, log(0), overflow in exp()
+- Propagate device and dtype from input data -- don't hardcode `device='cuda'` or `dtype=jnp.float32`

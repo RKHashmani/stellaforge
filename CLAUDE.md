@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Project-level instructions for AI assistants working in the StellaForge repository.
-This is the single source of truth for all coding standards -- team members may not have a global CLAUDE.md.
+This is the single source of truth for all coding standards.
 
 ---
 
@@ -9,78 +9,87 @@ This is the single source of truth for all coding standards -- team members may 
 
 ### Project Description
 
-StellaForge is an end-to-end stellarator design pipeline connecting equilibrium, Boozer transform, neoclassical transport, turbulence, and profile evolution in containerized, orchestrated stages. The companion `stellarator_workflow/` submodule contains TeX manuscripts defining the physics equations and I/O contracts. See `docs/architecture.md` for the full pipeline design.
+StellaForge is an open-source pipeline for stellarator design, connecting five physics stages (equilibrium, Boozer transform, neoclassical transport, turbulence, and profile evolution) into a single reproducible workflow. The current goal is a working forward pass: from boundary Fourier coefficients and profile guesses through to transport-consistent profiles and fusion-power metrics. The pipeline is designed to be closed-loop, so output profiles can eventually feed back to Stage 1 for iterative optimization.
+
+StellaForge is a **recipe repo**: it contains environment definitions, container builds, and orchestration logic, but the upstream solver codes are installed as dependencies. The companion `stellarator_workflow/` submodule contains TeX manuscripts defining the physics equations and I/O contracts. See `docs/guide.md` for the full pipeline design and contributor workflow.
 
 ### Repository Structure
 
 ```
 StellaForge/
 ├── CLAUDE.md                    # This file
-├── versions.yaml                # Pinned upstream commits, JAX, Python, CUDA versions
-├── Snakefile                    # Pipeline DAG (Phase 3)
-├── config.yaml                  # Default pipeline configuration
 ├── docs/                        # Project documentation
-│   ├── architecture.md          # Master pipeline design
-│   ├── contributor-guide.md     # Stage owner playbook
-│   ├── workflow-integration.md  # Snakemake engineer spec
+│   ├── guide.md                 # Pipeline design, contributor workflow, container architecture
+│   ├── mvp-pipeline.md          # MVP I/O reference with Pixi install/run commands
+│   ├── potential_issues.md      # Known cross-stage compatibility issues
 │   └── stage{N}-{name}/        # Per-stage specifications
 │       └── spec.md
-├── containers/                  # Dockerfiles and entry-point scripts
-│   ├── base/                    # Shared base images (CPU and GPU)
-│   │   ├── Dockerfile.cpu       # python:3.11 + common scientific stack
-│   │   └── Dockerfile.gpu       # nvidia/cuda:12.x + JAX[cuda] + common stack
-│   └── stage{N}-{name}/        # Per-stage container build context
-│       ├── Dockerfile           # FROM stellaforge-base-{cpu|gpu}
-│       ├── .dockerignore
-│       ├── requirements.txt     # Upstream package pins (commit SHAs for source builds)
-│       └── scripts/             # Entry-point and wrapper scripts
-│           └── run.py           # Container ENTRYPOINT (also runnable locally)
-├── input/                       # Reference input data (boundary coefficients, profiles)
-├── tests/                       # Test suite (mirrors stage structure)
+├── mvp/                         # Pixi environments, Dockerfile, and MVP test data
+│   ├── pixi.toml                # Per-stage environment definitions and dependency pins
+│   ├── pixi.lock                # Digest-level lock file for reproducible builds
+│   ├── Dockerfile               # Single templated Dockerfile (all stages via build args)
+│   └── stage{N}-{name}/        # Per-stage input/ and expected_output/ directories
+├── .github/                     # CI workflows for container builds
 ├── stellarator_workflow/        # Read-only TeX reference (git submodule)
-└── runs/                        # Pipeline output (gitignored)
+└── LICENSE
 ```
 
 ### The 5 Pipeline Stages
 
-| Stage | Name | Primary JAX Code | Alternatives | Spec |
-|-------|------|-----------------|--------------|------|
-| 1 | Equilibrium | vmec_jax, DESC | VMEC++ | `docs/stage1-equilibrium/spec.md` |
-| 2 | Boozer Transform | booz_xform_jax | BOOZ_XFORM | `docs/stage2-boozer/spec.md` |
-| 3 | Neoclassical | NEO_JAX, sfincs_jax, MONKES | NEO, SFINCS | `docs/stage3-neoclassical/spec.md` |
-| 4 | Turbulence | SPECTRAX-GK | GX, GENE | `docs/stage4-turbulence/spec.md` |
-| 5 | Transport | NEOPAX | Trinity3D | `docs/stage5-transport/spec.md` |
+| Stage | Name | Primary Code | Alternatives | Spec |
+|-------|------|-------------|--------------|------|
+| 1 | Equilibrium | `vmec_jax`, `DESC` | `VMEC++` | `docs/stage1-equilibrium/spec.md` |
+| 2 | Boozer Transform | `booz_xform_jax` | `BOOZ_XFORM` | `docs/stage2-boozer/spec.md` |
+| 3 | Neoclassical | `NEO_JAX`, `sfincs_jax` / `monkes` | `NEO`, `SFINCS` | `docs/stage3-neoclassical/spec.md` |
+| 4 | Turbulence | `SPECTRAX-GK` | `GX`, `GENE` | `docs/stage4-turbulence/spec.md` |
+| 5 | Transport | `NEOPAX` | `Trinity3D` | `docs/stage5-transport/spec.md` |
 
-Forward-pass chain: vmec_jax -> booz_xform_jax -> (NEO_JAX + sfincs_jax + MONKES) -> SPECTRAX-GK -> NEOPAX
+Forward-pass chain: `vmec_jax` -> `booz_xform_jax` -> (`sfincs_jax` / `monkes`) -> `SPECTRAX-GK` -> `NEOPAX`
+
+**Key notes:**
+- `NEO_JAX` is **not** in the forward-pass chain. It computes epsilon_eff as a screening/optimization diagnostic only and does not feed Stage 5.
+- `sfincs_jax` and `monkes` are **alternatives**, not parallel. Only one is needed: `sfincs_jax` provides full drift-kinetic fluxes while `monkes` provides a monoenergetic D_ij database. Either can feed `NEOPAX` (Stage 5).
+- `NEO_JAX` runs independently alongside whichever of `sfincs_jax` / `monkes` is selected.
+- Stages 3 and 4 run in parallel after Stage 2.
 
 ### Naming Conventions
 
 - Stage directories: `stage{N}-{name}` (e.g., `stage1-equilibrium`)
-- Container images: `stellaforge/stage{N}-{name}:{version}` (on Docker Hub)
-- Base images: `stellaforge/base-cpu:{version}`, `stellaforge/base-gpu:{version}`
+- Container images: `ghcr.io/rkhashmani/stellaforge:stage-{N}-cpu` / `stage-{N}-gpu` (on GHCR)
 - W&B projects: `stellaforge-stage{N}-{name}`
 - Output directories: `{run_dir}/stage{N}_{name}/`
 - Test files: mirror source structure in `tests/`
 
 ### Inter-Stage Contracts
 
-- All communication is file-based (NetCDF/HDF5 on shared volumes).
-- Each stage reads from its predecessor's output directory.
-- No wrapper protocol -- Snakemake wires stages via file dependencies.
-- Stage spec docs are the authoritative source for I/O field definitions.
+Currently, most inter-stage communication is **file-based** using standard physics file formats:
+- **NetCDF** (`.nc`): equilibrium (`wout_*.nc`), Boozer (`boozmn_*.nc`), turbulence outputs
+- **HDF5** (`.h5`): neoclassical outputs (`sfincsOutput.h5`), `monkes` D_ij databases, `NEOPAX` profiles
+
+Snakemake rules define which files connect which stages. Each stage's `spec.md` is the authoritative source for required/optional fields in its output files. Where alternative implementations use different file formats or field names, a wrapper or adapter layer will be needed to translate between them.
+
+**Key points from the TeX manuscripts:**
+
+1. **Screening-only outputs vs. transport state variables.** `NEO_JAX`'s epsilon_eff is central to ranking candidate geometries but is NOT advanced by a transport solver. It should not be wired as a transport input.
+2. **Dual-role outputs.** Heat/particle flux from `SPECTRAX-GK` and neoclassical flux from `SFINCS` are simultaneously optimization objectives (to minimize) AND direct numerical inputs for transport profile evolution.
+3. **`monkes` -> `NEOPAX` handoff.** `NEOPAX`'s database reader consumes a reduced subset of the `monkes` D_ij HDF5 output (`D11`, `D13`, `D33`, `Er`, `Er_tilde`, `drds`, `rho`, `nu_v`). Agreement on exact field names and shapes is required.
+4. **Turbulence coupling.** `NEOPAX` has turbulence-coupling utilities, but the public examples center on the neoclassical reduced model from `monkes`. The `SPECTRAX-GK` -> `NEOPAX` path (Stage 4 -> Stage 5) is not yet the default.
 
 ### Working with This Codebase
 
-- Read `docs/architecture.md` first for the big picture.
-- Each stage has its own spec in `docs/stageN-*/spec.md`.
-- The `stellarator_workflow/` submodule is read-only reference material.
+- Read `docs/guide.md` first for the big picture and contributor workflow.
+- Read `docs/mvp-pipeline.md` for MVP I/O reference, Pixi install/run commands.
+- Each stage has its own spec in `docs/stage{N}-{name}/spec.md`.
+- The `stellarator_workflow/` submodule is read-only reference material:
+  - `stellarator_workflow.tex` -- governing equations and code details
+  - `stellarator_io_reference.tex` -- I/O contracts and handoff specifications
 - When modifying a stage, consult its spec doc for I/O contracts.
 
 ### Phase-Specific Rules
 
-- **Phase 1 (Document & Run):** Focus on documentation and running existing code. Do not restructure upstream code.
-- **Phase 2 (Containerize & Test):** Container changes must pass integration tests before merge.
-- **Phase 3 (Integrate):** Snakemake rules must support config-driven implementation selection.
+- **Phase 1 (Document & Run):** Install and run the primary code, document the API and convergence behavior, write example scripts, set up W&B tracking. No cross-stage Python imports: all inter-stage communication is through files (e.g. NetCDF/HDF5). This is necessary to maintain swappability. Do not restructure upstream code.
+- **Phase 2 (Containerize & Test):** Build container environments, write unit/regression/integration tests. Container changes must pass integration tests before merge. See `docs/guide.md#container-architecture` for the Pixi + Dockerfile approach.
+- **Phase 3 (Integrate):** Snakemake rules should support config-driven implementation selection. Stages 3 and 4 run in parallel after Stage 2. `NEO_JAX`'s epsilon_eff is a screening metric only -- it should not be wired as a dependency for Stage 5.
 
 ---
 
@@ -135,6 +144,7 @@ Forward-pass chain: vmec_jax -> booz_xform_jax -> (NEO_JAX + sfincs_jax + MONKES
 
 ### Documentation
 
+- Favor simplicity. State information once in the most appropriate location and reference it elsewhere rather than repeating it. If something is already documented in another file, link to it instead of duplicating.
 - Add docstrings to all new/modified public functions using NumPy-style format (Parameters, Returns, Notes).
 - For new docstrings, do not reformat existing docstrings in a different style unless modifying the function.
 - Include mathematical context in docstrings: reference paper equations/sections where applicable.
@@ -153,7 +163,7 @@ Forward-pass chain: vmec_jax -> booz_xform_jax -> (NEO_JAX + sfincs_jax + MONKES
 
 - Use library-provided linear algebra functions over manual implementations (e.g., `jax.numpy.linalg`, `numpy.linalg`, `scipy.linalg`).
 - Validate mathematical properties of inputs before use (e.g., positive-definiteness of covariance matrices via Cholesky).
-- Propagate device and dtype from input data -- never hardcode device or precision.
+- Propagate device and dtype from input data -- never hardcode device or precision (e.g., avoid `device='cuda'` or `dtype=jnp.float32`).
 - Use higher precision for computations where numerical accuracy matters (e.g., float64 for information-theoretic or covariance calculations).
 - Guard against numerical edge cases: division by zero, log(0), overflow in exp(), and similar.
 
@@ -209,22 +219,14 @@ Forward-pass chain: vmec_jax -> booz_xform_jax -> (NEO_JAX + sfincs_jax + MONKES
 ### Docker & Containerization
 
 - Pin base image versions to specific tags, not `latest`.
-- Run containers as a non-root user for security.
-- Add `.dockerignore` to exclude unnecessary files (e.g., `data/`, `output_dir/`, `.git/`, `__pycache__/`).
+- Add `.dockerignore` to exclude unnecessary files from the build context.
 - Keep Dockerfiles minimal -- install only production dependencies.
 
-**StellaForge container architecture:**
-- Two shared base images in `containers/base/`: `Dockerfile.cpu` (python:3.11-slim + common scientific stack) and `Dockerfile.gpu` (nvidia/cuda:12.x + JAX[cuda] + common stack). All stage containers inherit from one of these.
-- GPU stages (Stage 4: SPECTRAX-GK, and any future GPU-accelerated stages) use the GPU base image. All others use the CPU base image.
-- Prebuilt images are published to Docker Hub under the `stellaforge/` organization.
-- Each stage's `containers/stage{N}-{name}/scripts/run.py` is the container entry point. These scripts bridge between the pipeline's file-based I/O and the upstream code's Python API.
-
-**Version pinning (critical for reproducibility):**
-- All upstream dependencies are pinned in `versions.yaml` at the repo root.
-- For pip-installable packages: pin exact versions (e.g., `jax==0.4.35`).
-- For source-built packages: pin to exact git commit SHAs, not branch names. A `git clone` + `git checkout {sha}` is reproducible; `git clone` of `main` is not.
-- Each stage's `containers/stage{N}-{name}/requirements.txt` must reference the pinned versions from `versions.yaml`.
-- Python and CUDA versions are standardized across all stages via the shared base images.
+**StellaForge container architecture** (see `docs/guide.md#container-architecture` for full details):
+- All dependencies are managed through Pixi (e.g., `mvp/pixi.toml` + `mvp/pixi.lock`).
+- A single templated Dockerfile (e.g., `mvp/Dockerfile`) builds all stages using `ghcr.io/prefix-dev/pixi:noble` as the base image. Build arguments (`ENVIRONMENT`, `CUDA_VERSION`) select the target stage and GPU support.
+- Container images are published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-{N}-cpu` / `stage-{N}-gpu`. CI builds all stage variants from the single Dockerfile using a GitHub Actions matrix.
+- Source-built upstream packages are pinned to exact git commit SHAs in `pixi.toml`.
 
 ### Performance & Memory Management
 

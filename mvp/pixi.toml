@@ -46,6 +46,41 @@ sfincs-jax = { git = "https://github.com/uwplasma/sfincs_jax", rev = "de50abd2ee
 [feature.stage-3.tasks.stage-3-neoclassical]
 cmd = "sfincs_jax stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201"
 
+[feature.stage-4.dependencies]
+numpy = ">=2.3,<2.4"
+jax = ">=0.8,<0.9"
+diffrax = ">=0.7.2,<0.8"
+equinox = ">=0.13.6,<0.14"
+tqdm = ">=4.67.3,<5"
+matplotlib = ">=3.10.8,<4"
+# booz-xform-jax dependencies
+netcdf4 = ">=1.7.4,<2"
+plotly = ">=6.6.0,<7"
+
+[feature.stage-4.pypi-dependencies]
+spectrax-gk = { git = "https://github.com/uwplasma/SPECTRAX-GK.git", rev = "61aac059166e30f937fa0ad6163b4d857c132622" }
+booz-xform-jax = { git = "https://github.com/uwplasma/booz_xform_jax.git", rev = "1f206597f2f28436e0e2124160c13de9ae63b2ea" }
+
+[feature.stage-4.tasks.stage-4-turbulence]
+cmd = "spectrax-gk run --config ./stage4-turbulence/spectrax_gk/input/runtime_hsx_nonlinear_vmec_geometry.toml --out stage4-turbulence/spectrax_gk/tools_out/hsx_run"
+
+[feature.stage-5.dependencies]
+scipy = ">=1.17.1,<2"
+jax = ">=0.9.1,<0.10"
+equinox = ">=0.13.6,<0.14"
+optimistix = ">=0.1.0,<0.2"
+lineax = ">=0.1.0,<0.2"
+diffrax = ">=0.7.2,<0.8"
+interpax = ">=0.3.13,<0.4"
+matplotlib = ">=3.10.8,<4"
+h5py = ">=3.16.0,<4"
+netcdf4 = ">=1.7.4,<2"
+
+[feature.stage-5.pypi-dependencies]
+orthax = ">=0.2.8, <0.3"
+inductiva = ">=0.18.12, <0.19"
+neopax = { git = "https://github.com/uwplasma/NEOPAX.git", rev = "5ec4cc3c5583121c5c454358defa7ab1af40c211" }
+
 [feature.cuda]
 platforms = ["linux-64"]
 [feature.cuda.system-requirements]
@@ -58,3 +93,7 @@ stage-2 = {features = ["stage-2"], no-default-feature = true }
 stage-2-gpu = {features = ["stage-2", "cuda"], no-default-feature = true }
 stage-3 = {features = ["stage-3"], no-default-feature = true}
 stage-3-gpu = {features = ["stage-3", "cuda"], no-default-feature = true }
+stage-4 = {features = ["stage-4"], no-default-feature = true}
+stage-4-gpu = {features = ["stage-4", "cuda"], no-default-feature = true }
+stage-5 = {features = ["stage-5"], no-default-feature = true}
+stage-5-gpu = {features = ["stage-5", "cuda"], no-default-feature = true }

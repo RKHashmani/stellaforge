@@ -8,7 +8,9 @@ Stage 1 solves the three-dimensional ideal-MHD equilibrium problem, producing th
 
 **Position in pipeline:** This stage has no upstream dependencies. Its output (`wout_*.nc`) is consumed by Stage 2 (Boozer Transform) and also directly by some turbulence and transport codes.
 
-Reference: `stellarator_workflow/stellarator_workflow.tex`, Section 4.1 (VMEC++ and vmec_jax) and Section 4.2 (DESC).
+Reference: `stellarator_workflow/stellarator_workflow.tex`, Section 4.1 (`VMEC++` and `vmec_jax`) and Section 4.2 (`DESC`).
+
+---
 
 ## Codes
 
@@ -21,18 +23,31 @@ Reference: `stellarator_workflow/stellarator_workflow.tex`, Section 4.1 (VMEC++ 
 - **Repository:** https://github.com/proximafusion/vmecpp
 - **Documentation:** https://proximafusion.github.io/vmecpp/
 - **Language:** C++ with Python bindings
-- **Role:** From-scratch C++ reimplementation of VMEC. Solves fixed- and free-boundary ideal-MHD equilibria. Preserves the standard `wout` downstream contract.
+- **Role:** From-scratch C++ reimplementation of `VMEC`. Solves fixed- and free-boundary ideal-MHD equilibria. Preserves the standard `wout` downstream contract.
 
 ### DESC (Differentiable Alternative)
 - **Repository:** https://github.com/PlasmaControl/DESC
 - **Language:** Python/JAX
-- **Role:** Differentiable pseudo-spectral equilibrium and optimization suite. Can replace VMEC++ as the equilibrium engine and also perform some downstream computations (Boozer transform, geometry objectives) internally.
+- **Role:** Differentiable pseudo-spectral equilibrium and optimization suite. Can replace `VMEC++` as the equilibrium engine and also perform some downstream computations (Boozer transform, geometry objectives) internally.
 
 ### Installation & Platform
 
-> **OWNER COMPLETES:** Document installation instructions for vmec_jax (primary), version requirements, known platform issues, and any dependency conflicts. Include setup for VMEC++ and DESC as secondary/alternative codes if applicable.
+**`vmec_jax`:** Install via the Pixi environment. From inside `mvp/`:
+
+```
+pixi install --environment stage-1
+```
+
+See `docs/mvp-pipeline.md` for run commands and I/O details.
+
+> [!TODO]
+> Document installation instructions and platform notes for `VMEC++` and `DESC`.
+
+---
 
 ## Input Specification
+
+Reference: `stellarator_io_reference.tex`, Section 3.1.
 
 ### Physical Inputs
 
@@ -49,25 +64,30 @@ Reference: `stellarator_workflow/stellarator_workflow.tex`, Section 4.1 (VMEC++ 
 
 ### Resolution & Solver Controls
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `NS` | int or array | Number of radial grid points (can be a multi-grid sequence) |
-| `MPOL` | int | Maximum poloidal mode number |
-| `NTOR` | int | Maximum toroidal mode number |
-| `NITER` / `NITER_ARRAY` | int / array | Iteration budgets |
-| `FTOL` / `FTOL_ARRAY` | float / array | Convergence tolerances |
+| Field                   | Type          | Description                                                 |
+| ----------------------- | ------------- | ----------------------------------------------------------- |
+| `NS`                    | int or array  | Number of radial grid points (can be a multi-grid sequence) |
+| `MPOL`                  | int           | Maximum poloidal mode number                                |
+| `NTOR`                  | int           | Maximum toroidal mode number                                |
+| `NITER` / `NITER_ARRAY` | int / array   | Iteration budgets                                           |
+| `FTOL` / `FTOL_ARRAY`   | float / array | Convergence tolerances                                      |
 
 ### Input Formats
-- **INDATA files:** Fortran-style text `input.NAME` format (vmec_jax and VMEC++)
-- **JSON:** Programmatic input (VMEC++ only)
-- **Python objects:** In-memory API (both VMEC++ and vmec_jax)
+- **INDATA files:** Fortran-style text `input.NAME` format (`vmec_jax` and `VMEC++`)
+- **JSON:** Programmatic input (`VMEC++` only)
+- **Python objects:** In-memory API (both `VMEC++` and `vmec_jax`)
 - **Hot restart:** Previous converged output state as initial guess
 
 ### Input Validation
 
-> **OWNER COMPLETES:** After running the code, validate the input tables above against actual code behavior. Note any fields the TeX spec missed, any deprecated fields, and any code-specific quirks (e.g., fields that are silently ignored, default values that differ between codes, required vs. optional fields).
+> [!TODO]
+> Validate input tables against actual code behavior.
+
+---
 
 ## Output Specification
+
+Reference: `stellarator_io_reference.tex`, Section 3.1.
 
 ### Primary Output: `wout_*.nc` (NetCDF)
 
@@ -119,7 +139,7 @@ Reference: `stellarator_workflow/stellarator_workflow.tex`, Section 4.1 (VMEC++ 
 | `currumnc` | 2D array (ns x mnmax) | J_theta cosine coefficients |
 | `currvmnc` | 2D array (ns x mnmax) | J_zeta cosine coefficients |
 
-#### Python API Objects (vmec_jax / VMEC++)
+#### Python API Objects (`vmec_jax` / `VMEC++`)
 
 | Object | Description |
 |--------|-------------|
@@ -130,7 +150,7 @@ Reference: `stellarator_workflow/stellarator_workflow.tex`, Section 4.1 (VMEC++ 
 
 ### Subset Handed to Next Stage
 
-Stage 2 (BOOZ_XFORM / booz_xform_jax) needs the **full** equilibrium spectrum and profiles in `wout_*.nc`. GX, Trinity3D, and NEOPAX geometry readers also consume wout-level data for field-line geometry, rotational transform, and surface metrics.
+Stage 2 (`BOOZ_XFORM` / `booz_xform_jax`) needs the **full** equilibrium spectrum and profiles in `wout_*.nc`. `GX`, `Trinity3D`, and `NEOPAX` geometry readers also consume wout-level data for field-line geometry, rotational transform, and surface metrics.
 
 ### Outputs Used as Objectives
 
@@ -140,7 +160,10 @@ Stage 2 (BOOZ_XFORM / booz_xform_jax) needs the **full** equilibrium spectrum an
 
 ### Output Validation
 
-> **OWNER COMPLETES:** Run an actual equilibrium case and verify the output fields listed above exist in the resulting `wout_*.nc` file. Note any missing fields, shape discrepancies, additional fields not listed here, or differences between vmec_jax and VMEC++ outputs.
+> [!TODO]
+> Verify output fields against actual `wout_*.nc` files.
+
+---
 
 ## Governing Equations
 
@@ -148,11 +171,11 @@ The equilibrium satisfies ideal-MHD force balance:
 
 $$\nabla p = \mathbf{J} \times \mathbf{B}, \quad \nabla \cdot \mathbf{B} = 0, \quad \mathbf{J} = \frac{1}{\mu_0} \nabla \times \mathbf{B}$$
 
-VMEC++ finds the stationary point of the energy functional (Hirshman & Whitson 1983):
+`VMEC++` finds the stationary point of the energy functional (Hirshman & Whitson 1983):
 
 $$W = \frac{1}{(2\pi)^2} \int \left( \frac{B^2}{2} + \frac{p}{\gamma - 1} \right) dV$$
 
-In VMEC++ flux coordinates with the stream function lambda:
+In `VMEC++` flux coordinates with the stream function lambda:
 
 $$u = \theta + \lambda(s, \theta, \zeta), \quad \frac{du}{d\zeta} = \iota(s)$$
 
@@ -162,65 +185,81 @@ $$B^\zeta = \frac{\Phi'(s) + \text{lamscale} \cdot \partial_\theta \lambda}{\tex
 
 $$B^\theta = \frac{\chi'(s) - \text{lamscale} \cdot \partial_\zeta \lambda}{\text{signgs} \cdot \sqrt{g} \cdot 2\pi}$$
 
-DESC solves the same physics in a pseudo-spectral formulation:
+`DESC` solves the same physics in a pseudo-spectral formulation:
 
 $$\mathbf{B} = \frac{\partial_\rho \psi}{2\pi\sqrt{g}} \left[ \left(\iota - \frac{\partial\lambda}{\partial\zeta}\right) \mathbf{e}_\theta + \left(1 + \frac{\partial\lambda}{\partial\theta}\right) \mathbf{e}_\zeta \right]$$
 
 Reference: `stellarator_workflow.tex`, Sections 4.1-4.2.
 
+---
+
 ## Convergence & Validity
 
-> **OWNER COMPLETES:** Document the following after running the code:
-> - What input configurations are known to converge (e.g., specific stellarator configs like Landreman-Paul QA/QH)
-> - What configurations are known to fail or diverge
-> - Convergence criteria and tolerances (what `fsqr`/`fsqz`/`fsql` values indicate convergence)
-> - Known numerical edge cases (e.g., very high aspect ratio, free-boundary issues)
-> - Multi-grid strategy: which NS sequences work well
+> [!TODO]
+> Document convergence behavior, known failure modes, and recommended tolerances.
+
+---
 
 ## API Documentation
 
-> **OWNER COMPLETES:** Document the following:
-> - Key entry-point functions with full signatures (vmec_jax primary, VMEC++ secondary)
-> - Configuration parameters and their effects
-> - Programmatic usage examples (Python/JAX)
-> - How to do a hot restart from a previous converged state
-> - How to extract specific fields from the output object
+> [!TODO]
+> Document key entry points, configuration parameters, and usage examples.
+
+---
 
 ## Scripts & Workflows
 
-> **OWNER COMPLETES:** Provide the following:
-> - How to run the code standalone (CLI and Python)
-> - Example scripts with sample input data (e.g., a simple stellarator case)
-> - Common debugging workflows (e.g., what to check when convergence fails)
-> - How to visualize equilibrium results
+**`vmec_jax` (via Pixi):** From inside `mvp/`:
+
+```
+pixi run stage-1-equilibrium
+```
+
+**Input:** `mvp/stage1-equilibrium/vmec_jax/input/input.HSX_QHS_vacuum_ns201`
+**Output:** `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc`
+
+See `docs/mvp-pipeline.md` for full I/O details.
+
+> [!TODO]
+> Add standalone run scripts and debugging workflows for `VMEC++` and `DESC`.
+
+---
 
 ## W&B Tracking
 
-> **OWNER COMPLETES:** Set up and document:
-> - W&B project: `stellaforge-stage1-equilibrium`
-> - What metrics to log: convergence residuals (`fsqr`, `fsqz`, `fsql`) vs iteration, runtime, key geometry scalars (aspect, volume, beta), iota profile
-> - Key dashboard panels
-> - Run naming convention
+**Project:** `stellaforge-stage1-equilibrium`
+
+> [!TODO]
+> Set up W&B tracking.
+
+---
 
 ## Container Specification (Phase 2)
 
-> **OWNER COMPLETES:** Define the following during Phase 2:
-> - Base image and key dependencies (JAX version, etc.)
-> - Dockerfile entry point
-> - Expected volume mounts (input dir, output dir)
-> - Environment variables
-> - Resource requirements (CPU/GPU, memory)
+**`vmec_jax`:** Built from the single templated `mvp/Dockerfile` using a build process morally equivalent to:
+
+```
+docker build --file mvp/Dockerfile --build-arg ENVIRONMENT=stage-1 --platform linux/amd64 --tag ghcr.io/rkhashmani/stellaforge:stage-1-cpu mvp/  # CPU
+docker build --file mvp/Dockerfile --build-arg CUDA_VERSION=12 --build-arg ENVIRONMENT=stage-1-gpu --platform linux/amd64 --tag ghcr.io/rkhashmani/stellaforge:stage-1-gpu mvp/  # GPU
+```
+
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-1-cpu` and `stage-1-gpu`. CI builds via `.github/workflows/docker.yml`.
+
+See [guide](../guide.md#container-architecture) for full architecture details.
+
+> [!TODO]
+> Define container specifications for `VMEC++` and `DESC`.
+
+---
 
 ## Tests (Phase 2)
 
-> **OWNER COMPLETES:** Write the following during Phase 2:
-> - Unit tests for mathematical invariants (e.g., force balance residual should decrease monotonically)
-> - Regression tests against known-good wout files (compare key fields with tolerances)
-> - Integration test: output `wout_*.nc` can be read by booz_xform_jax (Stage 2)
-> - Acceptance criteria: definition of "done" for this stage
+> [!TODO]
+> Write unit, regression, and integration tests. See [guide](../guide.md#writing-tests) for examples.
+
+---
 
 ## Claude Skills
 
-> **OWNER COMPLETES:** Create the following Claude skills:
-> - Dev skill: how to run vmec_jax, debug convergence failures, interpret wout fields, understand the physics
-> - Operational skill: how to build the container, run the test suite, validate outputs against known-good results
+> [!TODO]
+> Create development and operational Claude skills. See [guide](../guide.md#step-7-create-claude-skills) for skill types.

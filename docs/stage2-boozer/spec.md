@@ -26,39 +26,41 @@ Transforms a VMEC-style equilibrium into Boozer coordinates. Boozer coordinates 
 
 ### Installation & Platform
 
-<!-- OWNER COMPLETES: Document the installation steps for booz_xform_jax and BOOZ_XFORM.
-     Include:
-     - Python version and JAX version requirements for booz_xform_jax
-     - Fortran compiler and build instructions for BOOZ_XFORM
-     - pip/conda/pixi install commands for both codes
-     - Any platform-specific notes (macOS ARM, Linux GPU, etc.)
-     - How to verify a successful installation (e.g., a smoke-test command) -->
+**`booz_xform_jax`:** Install via the Pixi environment. From inside `mvp/`:
+
+```
+pixi install --environment stage-2
+```
+
+See `docs/mvp-pipeline.md` for run commands and I/O details.
+
+> [!TODO]
+> Document installation instructions and platform notes for `BOOZ_XFORM`.
 
 ---
 
 ## Input Specification
 
+Reference: `stellarator_io_reference.tex`, Section 3.2.
+
 | Field | Type | Description | Source |
 |-------|------|-------------|--------|
 | `wout_*.nc` | NetCDF file | Full VMEC equilibrium output | Stage 1 |
 
-The JAX version (booz_xform_jax) does not use a separate `in_booz.*` control file. Resolution (mboz, nboz) and surface selection are specified via the Python API. The legacy BOOZ_XFORM uses an `in_booz.*` control file.
+The JAX version (`booz_xform_jax`) does not use a separate `in_booz.*` control file. Resolution (mboz, nboz) and surface selection are specified via the Python API. The legacy `BOOZ_XFORM` uses an `in_booz.*` control file.
 
-booz_xform_jax also accepts in-memory wout-like objects directly from Stage 1, bypassing file I/O.
+`booz_xform_jax` also accepts in-memory wout-like objects directly from Stage 1, bypassing file I/O.
 
 ### Input Validation
 
-<!-- OWNER COMPLETES: Document the input validation checks that should be performed
-     before running the Boozer transform. Include:
-     - Required fields in wout_*.nc and how to verify they exist and are non-degenerate
-     - Sanity checks on mboz/nboz (e.g., must be >= VMEC mpol/ntor, reasonable upper bounds)
-     - Surface index validation (must be within the VMEC radial grid range, must exclude axis)
-     - Any constraints on the equilibrium quality (e.g., force residual threshold from Stage 1)
-     - Error messages or exit codes for each validation failure -->
+> [!TODO]
+> Document input validation checks for wout fields, mboz/nboz bounds, surface indices, and equilibrium quality thresholds.
 
 ---
 
 ## Output Specification
+
+Reference: `stellarator_io_reference.tex`, Section 3.2.
 
 ### Primary Output: `boozmn_*.nc` (NetCDF)
 
@@ -82,7 +84,7 @@ booz_xform_jax also accepts in-memory wout-like objects directly from Stage 1, b
 
 ### Subset Handed to Next Stage
 
-NEO and NEO_JAX need the Boozer spectrum and radial profiles. SFINCS/sfincs_jax use the same Boozer geometry. MONKES and NEOPAX use the Boozer spectrum through direct field or file readers.
+`NEO` and `NEO_JAX` need the Boozer spectrum and radial profiles. `SFINCS`/`sfincs_jax` use the same Boozer geometry. `monkes` and `NEOPAX` use the Boozer spectrum through direct field or file readers.
 
 ### Outputs Used as Objectives
 
@@ -93,16 +95,8 @@ Non-target Boozer harmonics in `bmnc_b` or symmetry-breaking measures built from
 
 ### Output Validation
 
-<!-- OWNER COMPLETES: Document the output validation checks that should be performed
-     after the Boozer transform completes. Include:
-     - Verify boozmn_*.nc contains all required fields listed above with correct shapes
-     - Check that bmnc_b is finite and non-NaN on all computed surfaces
-     - Verify iota_b matches iota from the input wout_*.nc to within a tolerance
-     - Check spectral convergence: the tail of the Boozer spectrum should decay, not plateau
-     - Verify bvco_b and buco_b are smooth functions of the radial coordinate
-     - Cross-check: |B| reconstructed from Boozer harmonics should match |B| from VMEC on each surface
-     - Define pass/fail thresholds for each check
-     - Describe how validation results are logged (stdout, W&B, JSON summary) -->
+> [!TODO]
+> Document output validation checks: field completeness, spectral convergence, iota consistency, and |B| cross-checks against VMEC.
 
 ---
 
@@ -138,42 +132,33 @@ where $w$ is reconstructed from the original covariant field harmonics.
 
 ## Convergence & Validity
 
-<!-- OWNER COMPLETES: Document convergence behavior and validity criteria.
-     Include:
-     - How to assess convergence with respect to mboz and nboz resolution
-     - Typical convergence behavior: how fast do Boozer harmonics decay with mode number?
-     - Known failure modes (e.g., near-axis equilibria, very high aspect ratio, near-rational surfaces)
-     - Recommended resolution settings for production runs vs. quick screening
-     - How to detect divergence or poor convergence at runtime
-     - Comparison between booz_xform_jax and BOOZ_XFORM results for validation -->
+> [!TODO]
+> Document convergence behavior vs. mboz/nboz resolution, known failure modes, and recommended settings for production vs. screening.
 
 ---
 
 ## API Documentation
 
-<!-- OWNER COMPLETES: Document the Python API for booz_xform_jax.
-     Include:
-     - Main entry point function(s) with full signatures and type hints
-     - How to call from Python with a wout_*.nc file path
-     - How to call from Python with an in-memory wout-like object (JAX arrays)
-     - Return type and how to access individual output fields
-     - How to write the result to boozmn_*.nc
-     - Example code snippet for a minimal end-to-end call
-     - Any configuration options beyond mboz/nboz (e.g., compute_surfs, verbose) -->
+> [!TODO]
+> Document the booz_xform_jax Python API: entry points, file-based and in-memory calling conventions, and configuration options.
 
 ---
 
 ## Scripts & Workflows
 
-<!-- OWNER COMPLETES: Document the scripts for running Stage 2.
-     Include:
-     - CLI invocation for booz_xform_jax (command, required args, optional args)
-     - CLI invocation for BOOZ_XFORM (command, required args, optional args)
-     - Example in_booz control file with comments explaining each parameter
-     - How to run on a single equilibrium file
-     - How to run in batch mode on multiple equilibria
-     - Output directory convention: {run_dir}/stage2_boozer/
-     - How results connect to Stage 3 (which files, which directory) -->
+**`booz_xform_jax` (via Pixi):** From inside `mvp/`:
+
+```
+pixi run stage-2-boozer
+```
+
+**Input:** `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc` (from Stage 1)
+**Output:** `mvp/stage2-boozer/booz_xform_jax/expected_output/boozmn_HSX_QHS_vacuum_ns201.nc`
+
+See `docs/mvp-pipeline.md` for full I/O details.
+
+> [!TODO]
+> Add standalone run scripts and workflows for `BOOZ_XFORM`.
 
 ---
 
@@ -181,57 +166,39 @@ where $w$ is reconstructed from the original covariant field harmonics.
 
 **Project:** `stellaforge-stage2-boozer`
 
-<!-- OWNER COMPLETES: Document the Weights & Biases tracking setup.
-     Include:
-     - What metrics to log per run (e.g., spectral decay rate, quasi-symmetry residual,
-       max |bmnc_b| of unwanted harmonics, wall-clock time, mboz/nboz used)
-     - What artifacts to log (boozmn_*.nc, convergence plots, input config)
-     - Run naming convention
-     - How to compare booz_xform_jax vs. BOOZ_XFORM results in W&B
-     - Dashboard layout recommendations (panels for spectral content, convergence, etc.)
-     - Integration with Stage 1 W&B project for end-to-end tracking -->
+> [!TODO]
+> Document W&B metrics, artifacts, run naming, cross-code comparison dashboards, and Stage 1 integration.
 
 ---
 
 ## Container Specification (Phase 2)
 
-<!-- OWNER COMPLETES: Document the Docker container for Stage 2.
-     Include:
-     - Base image (e.g., python:3.11-slim, nvidia/cuda for GPU JAX)
-     - Key dependencies and their pinned versions
-     - Entry point command
-     - Volume mount expectations: input from {run_dir}/stage1_equilibrium/, output to {run_dir}/stage2_boozer/
-     - Environment variables (e.g., JAX_PLATFORM_NAME, W&B API key)
-     - Health check or smoke-test command
-     - Expected image size
-     - GPU vs. CPU variants -->
+**`booz_xform_jax`:** Built from the single templated `mvp/Dockerfile` using build arguments:
+
+```
+docker build --build-arg ENVIRONMENT=stage-2 mvp/        # CPU
+docker build --build-arg ENVIRONMENT=stage-2-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+```
+
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-2-cpu` and `stage-2-gpu`. CI builds via `.github/workflows/docker.yml`.
+
+See [guide](../guide.md#container-architecture) for full architecture details.
+
+> [!TODO]
+> Define container specifications for `BOOZ_XFORM`.
 
 ---
 
 ## Tests (Phase 2)
 
-<!-- OWNER COMPLETES: Document the test plan for Stage 2.
-     Include:
-     - Unit tests for the core Boozer transform computation
-     - Regression tests: known-good boozmn_*.nc outputs for reference equilibria
-     - Convergence tests: verify spectral decay with increasing mboz/nboz
-     - Cross-code validation: booz_xform_jax vs. BOOZ_XFORM agreement within tolerance
-     - Integration test: verify output boozmn_*.nc can be read by NEO_JAX (Stage 3)
-     - Integration test: verify output boozmn_*.nc can be read by sfincs_jax (Stage 3)
-     - Integration test: verify output boozmn_*.nc can be read by MONKES (Stage 3)
-     - Round-trip test: |B| reconstructed from Boozer harmonics matches VMEC |B|
-     - Edge case tests: single surface, all surfaces, minimal resolution
-     - Performance benchmarks: wall-clock time for standard test cases -->
+> [!TODO]
+> Document unit, regression, convergence, cross-code, integration, and round-trip tests for the Boozer transform.
+> See [guide](../guide.md#writing-tests) for examples.
 
 ---
 
 ## Claude Skills
 
-<!-- OWNER COMPLETES: Document the Claude Code skills for Stage 2.
-     Include:
-     - Dev skill: helps with development tasks (running booz_xform_jax, debugging,
-       interpreting output, convergence analysis)
-     - Operational skill: helps with production usage (running the container,
-       validating outputs, troubleshooting failures)
-     - What context each skill needs (file paths, config, common error patterns)
-     - Skill trigger conditions (when should each skill activate?) -->
+> [!TODO]
+> Document dev and operational Claude Code skills for running, debugging, and validating the Boozer transform.
+> See [guide](../guide.md#step-7-create-claude-skills) for skill types.

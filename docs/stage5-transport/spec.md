@@ -7,24 +7,26 @@ turbulent fluxes, and computes whole-device fusion-power metrics.  This is the
 final stage of the forward pass, producing transport-consistent profiles and the
 headline numbers ($P_\text{fus}$, $Q$).
 
-**JAX-first priority:** NEOPAX is the primary code (JAX-native, uses diffrax ODE
-solver).  Trinity3D is the traditional alternative with mature GX+SFINCS
+**JAX-first priority:** `NEOPAX` is the primary code (JAX-native, uses diffrax ODE
+solver).  `Trinity3D` is the traditional alternative with mature `GX`+`SFINCS`
 coupling.
 
-**Position in pipeline:** Receives $D_{ij}$ database from Stage 3 (MONKES),
-turbulent fluxes from Stage 4 (SPECTRAX-GK), and geometry from Stage 1/2.
+**Position in pipeline:** Receives neoclassical transport data from Stage 3 (`monkes` or `sfincs_jax`),
+turbulent fluxes from Stage 4 (`SPECTRAX-GK`), and geometry from Stage 1/2.
 Produces the forward-pass output: updated $n(r)$, $T(r)$, $E_r(r)$,
 $P_\text{fus}$, $Q$.
 
-**Important note on NEOPAX turbulence coupling:** NEOPAX has
+**Important note on `NEOPAX` turbulence coupling:** `NEOPAX` has
 turbulence-coupling utilities, but the public examples center on the
-neoclassical reduced model consuming MONKES $D_{ij}$.  Coupling SPECTRAX-GK
-turbulent flux into NEOPAX is a coordination point with the Stage 4 owner.  The
-alternative path (GX -> Trinity3D) has mature, tested turbulence coupling.
+neoclassical reduced model consuming `monkes` $D_{ij}$.  Coupling `SPECTRAX-GK`
+turbulent flux into `NEOPAX` is a coordination point with the Stage 4 owner.  The
+alternative path (`GX` -> `Trinity3D`) has mature, tested turbulence coupling.
 
 **Outer-loop handoff (future, not forward pass):** Updated pressure and current
-profiles feed back to Stage 1 for the next iteration.  This loop closure is NOT
-part of the initial forward-pass goal.
+profiles feed back to Stage 1 for the next iteration.
+
+> [!NOTE]
+> This loop closure is not part of the initial forward-pass goal.
 
 Reference: `stellarator_workflow.tex`, Sections 4.8--4.9;
 `stellarator_io_reference.tex`, Sections 3.11--3.12.
@@ -37,30 +39,27 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9;
 
 - **Repository:** <https://github.com/uwplasma/NEOPAX>
 - **Language:** Python / JAX
-- **Role:** Reduced neoclassical transport and profile evolution using MONKES
+- **Role:** Reduced neoclassical transport and profile evolution using `monkes`
   $D_{ij}$ databases.  Uses diffrax for JAX-native ODE integration.
 
 ### Trinity3D (Alternative)
 
 - **Repository:** <https://bitbucket.org/gyrokinetics/t3d>
-- **Documentation:** (see Trinity3D docs)
+- **Documentation:** (see `Trinity3D` docs)
 - **Language:** Python
-- **Role:** Global transport solver coupling GX turbulence and SFINCS
+- **Role:** Global transport solver coupling `GX` turbulence and `SFINCS`
   neoclassical fluxes.  Implicit linearized time advance.
 
 ### Installation & Platform
 
-<!-- OWNER COMPLETES: Document installation instructions for NEOPAX and
-     Trinity3D, including:
-     - Python version requirements and virtual-environment setup
-     - JAX installation (CPU vs GPU) and diffrax version pins
-     - Any Fortran/C dependencies for Trinity3D (GX, SFINCS)
-     - Platform-specific notes (Linux cluster, macOS dev, Docker base image)
-     - How to verify a working installation (e.g., run a smoke test) -->
+> [!TODO]
+> Document Pixi-based installation for NEOPAX and Trinity3D, including platform notes and smoke tests.
 
 ---
 
 ## Input Specification
+
+Reference: `stellarator_io_reference.tex`, Sections 3.11-3.12.
 
 ### NEOPAX Inputs
 
@@ -68,9 +67,9 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9;
 |-------|------|-------------|--------|
 | `wout_*.nc` | NetCDF | VMEC equilibrium geometry | Stage 1 |
 | `boozmn_*.nc` | NetCDF | Boozer-coordinate equilibrium | Stage 2 |
-| $D_{ij}$ database | HDF5 | Monoenergetic transport coefficients | Stage 3 (MONKES) |
+| $D_{ij}$ database | HDF5 | Monoenergetic transport coefficients | Stage 3 (monkes) |
 
-**$D_{ij}$ database fields consumed by NEOPAX reader:**
+**$D_{ij}$ database fields consumed by `NEOPAX` reader:**
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -92,24 +91,20 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9;
 |-------|------|-------------|--------|
 | TOML config (`*.in`) | file | Groups: `[grid]`, `[time]`, `[[model]]`, `[[species]]`, `[geometry]`, `[physics]`, `[log]` | User-specified |
 | `wout_*.nc` | via `[geometry]` | VMEC geometry | Stage 1 |
-| `gx_template` | via `[[model]]` | GX input template for turbulence model | Stage 4 (GX) |
-| `gx_outputs` | via `[[model]]` | GX flux outputs location | Stage 4 (GX) |
-| SFINCS fluxes | via `[[model]]` | Neoclassical fluxes | Stage 3 (SFINCS) |
+| `gx_template` | via `[[model]]` | `GX` input template for turbulence model | Stage 4 (`GX`) |
+| `gx_outputs` | via `[[model]]` | `GX` flux outputs location | Stage 4 (`GX`) |
+| `SFINCS` fluxes | via `[[model]]` | Neoclassical fluxes | Stage 3 (`SFINCS`) |
 
 ### Input Validation
 
-<!-- OWNER COMPLETES: Define input validation rules, including:
-     - Required fields, expected shapes/dimensions, and dtype constraints
-       for the D_ij HDF5 database (e.g., D11, D13, D33 must share the same
-       shape; rho must be monotonically increasing on [0, 1])
-     - Sanity checks on physical ranges (e.g., Er grid bounds, nu_v > 0)
-     - Validation that wout and boozmn files are consistent (same equilibrium)
-     - Trinity3D TOML schema validation (required keys, type checks)
-     - Error messages and exit behavior when validation fails -->
+> [!TODO]
+> Define input validation rules for the D_ij database, wout/boozmn consistency, and Trinity3D TOML schema.
 
 ---
 
 ## Output Specification
+
+Reference: `stellarator_io_reference.tex`, Sections 3.11-3.12.
 
 ### NEOPAX Outputs
 
@@ -218,15 +213,8 @@ $P_\text{fus}$, $Q$, $\beta$, transport-consistent profiles.
 
 ### Output Validation
 
-<!-- OWNER COMPLETES: Define output validation rules, including:
-     - Physical sanity checks (e.g., n_s > 0, T_s > 0, P_fus >= 0, Q >= 0)
-     - Profile monotonicity or smoothness expectations
-     - Conservation checks (e.g., particle and energy balance residuals
-       below a tolerance)
-     - Expected output shapes and consistency between arrays (e.g., all
-       profile arrays share the same rho grid)
-     - Validation of HDF5/NetCDF metadata (units, coordinate labels)
-     - Comparison against reference cases for regression testing -->
+> [!TODO]
+> Define output validation: physical sanity checks, conservation balances, shape consistency, and regression comparisons.
 
 ---
 
@@ -259,7 +247,7 @@ Implicit linearized time advance:
 
 $$(d_1 I + \alpha\Psi)\,y^{m+1} = -d_0 y^m - d_{-1}y^{m-1} + \alpha\Psi y^m - \alpha\bigl[G(F^+ - F^-) - S\bigr] - (1-\alpha)\bigl[G(F^+_m - F^-_m) - S_m\bigr]$$
 
-Flux Jacobians obtained by finite-differencing perturbed GX runs.
+Flux Jacobians obtained by finite-differencing perturbed `GX` runs.
 
 ### Fusion Power (both codes)
 
@@ -273,107 +261,52 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9.
 
 ## Convergence & Validity
 
-<!-- OWNER COMPLETES: Document convergence criteria and validity checks:
-     - NEOPAX: ODE solver tolerances (rtol, atol for diffrax), steady-state
-       convergence criterion (e.g., max relative change in profiles < threshold),
-       time-step strategy
-     - Trinity3D: implicit time-step limits, CFL-like constraints, convergence
-       of the linearized advance, number of GX perturbation runs per step
-     - Ambipolar E_r root-finding convergence (tolerance, max iterations)
-     - Physical validity: profiles remain positive, energy balance closes,
-       fusion power consistent with profile integrals
-     - Known failure modes and how to detect them (e.g., bifurcation in E_r,
-       stiff transport leading to solver divergence) -->
+> [!TODO]
+> Document convergence criteria for NEOPAX (diffrax tolerances, steady-state) and Trinity3D (implicit time-step, flux Jacobians), plus known failure modes.
 
 ---
 
 ## API Documentation
 
-<!-- OWNER COMPLETES: Document the Python API for both codes:
-     - NEOPAX: key functions/classes, their signatures, and usage patterns
-       (e.g., how to load D_ij database, configure species, run profile
-       evolution, extract Lij/Gamma/Q)
-     - Trinity3D: how to programmatically configure and launch a run, read
-       outputs, extract device metrics
-     - StellaForge adapter interface: the wrapper function(s) that Stage 5
-       exposes to the pipeline orchestrator, with input/output contracts
-     - Example call sequences for the forward pass -->
+> [!TODO]
+> Document Python APIs for NEOPAX and Trinity3D, including the StellaForge adapter interface and example call sequences.
 
 ---
 
 ## Scripts & Workflows
 
-<!-- OWNER COMPLETES: Document the runnable scripts and workflow entry points:
-     - NEOPAX: main driver script, CLI arguments, example invocations
-     - Trinity3D: main driver script, TOML config examples, example invocations
-     - StellaForge adapter script that wires Stage 3/4 outputs into Stage 5
-     - End-to-end forward-pass example (from D_ij database to P_fus, Q)
-     - Any pre-processing scripts (e.g., converting Stage 3 output format
-       to NEOPAX-expected HDF5 layout)
-     - Post-processing / visualization scripts for profiles and metrics -->
+> [!TODO]
+> Document driver scripts, CLI arguments, adapter wiring, and end-to-end forward-pass examples for NEOPAX and Trinity3D.
 
 ---
 
 ## W&B Tracking
 
-<!-- OWNER COMPLETES: Configure Weights & Biases logging for Stage 5.
-     - Project: stellaforge-stage5-transport
-     - Key metrics to log per run:
-       * P_fus (MW), Q (fusion gain)
-       * Profile evolution: n_e(rho), T_e(rho), E_r(rho) at selected timesteps
-       * Bootstrap current I_bs
-       * Convergence residuals vs iteration/time
-       * Wall-clock time and solver statistics
-     - Artifacts to log: final HDF5 output, input config, D_ij database hash
-     - Run naming convention and tagging scheme
-     - Dashboard layout for comparing runs across equilibria -->
+**Project:** `stellaforge-stage5-transport`
+
+> [!TODO]
+> Set up W&B tracking.
 
 ---
 
 ## Container Specification (Phase 2)
 
-<!-- OWNER COMPLETES: Define the Docker container for Stage 5.
-     - Base image (e.g., python:3.11-slim or nvidia/cuda for GPU JAX)
-     - System-level dependencies
-     - Python environment: JAX, diffrax, jaxlib, h5py, netCDF4, etc.
-     - Trinity3D dependencies if included in the same container
-     - Entry point and expected volume mounts (input dir, output dir)
-     - Environment variables (e.g., JAX_PLATFORM_NAME, XLA flags)
-     - Resource requirements: CPU/GPU, memory estimates for typical runs
-     - Health check / smoke test command -->
+> [!TODO]
+> Define the Docker container for Stage 5: base image, dependencies, entry point, volume mounts, and resource requirements.
+> See [guide](../guide.md#container-architecture) for architecture details.
 
 ---
 
 ## Tests (Phase 2)
 
-<!-- OWNER COMPLETES: Define the test plan for Stage 5.
-     - Unit tests:
-       * L_ij matrix assembly from D_ij coefficients
-       * Flux computations (Gamma, Q, Upar) against analytical limits
-       * Fusion power integral against known profiles
-       * Ambipolar E_r root-finding on synthetic data
-     - Integration tests:
-       * MONKES D_ij database (Stage 3 output) is correctly loaded and
-         consumed by NEOPAX reader -- verify shapes, coordinate grids,
-         and that computed fluxes match a reference case
-       * SPECTRAX-GK turbulent flux coupling: verify that Stage 4 fluxes
-         are correctly ingested and combined with neoclassical fluxes
-       * End-to-end: Stage 1/2/3 outputs -> Stage 5 -> profiles and P_fus
-     - Regression tests:
-       * Known-good output files for a reference equilibrium
-       * Tolerance bounds for P_fus, Q, and profile norms
-     - Performance tests:
-       * Wall-clock benchmarks for typical grid sizes
-       * Memory usage bounds -->
+> [!TODO]
+> Define unit, integration, regression, and performance tests for Stage 5 transport computations.
+> See [guide](../guide.md#writing-tests) for examples.
 
 ---
 
 ## Claude Skills
 
-<!-- OWNER COMPLETES: Define Claude Code skills for Stage 5 development.
-     - Skill for running NEOPAX on a given equilibrium with default settings
-     - Skill for comparing transport results between two runs
-     - Skill for diagnosing common failure modes (E_r bifurcation, solver
-       divergence, negative profiles)
-     - Skill for generating summary plots of profile evolution
-     - Any stage-specific linting or validation skills -->
+> [!TODO]
+> Define Claude Code skills for running NEOPAX, comparing results, and diagnosing failure modes.
+> See [guide](../guide.md#step-7-create-claude-skills) for skill types.
