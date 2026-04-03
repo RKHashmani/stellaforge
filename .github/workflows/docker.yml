@@ -57,6 +57,18 @@ jobs:
           - environment: stage-3-gpu
             cuda-version: "12"
             image-tag: stage-3-gpu
+          # stage-4
+          - environment: stage-4
+            image-tag: stage-4-cpu
+          - environment: stage-4-gpu
+            cuda-version: "12"
+            image-tag: stage-4-gpu
+          # stage-5
+          - environment: stage-5
+            image-tag: stage-5-cpu
+          - environment: stage-5-gpu
+            cuda-version: "12"
+            image-tag: stage-5-gpu
 
     steps:
       - name: Checkout
