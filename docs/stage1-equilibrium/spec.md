@@ -236,11 +236,11 @@ See `docs/mvp-pipeline.md` for full I/O details.
 
 ## Container Specification (Phase 2)
 
-**`vmec_jax`:** Built from the single templated `mvp/Dockerfile` using build arguments:
+**`vmec_jax`:** Built from the single templated `mvp/Dockerfile` using a build process morally equivalent to:
 
 ```
-docker build --build-arg ENVIRONMENT=stage-1 mvp/        # CPU
-docker build --build-arg ENVIRONMENT=stage-1-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+docker build --file mvp/Dockerfile --build-arg ENVIRONMENT=stage-1 --platform linux/amd64 --tag ghcr.io/rkhashmani/stellaforge:stage-1-cpu mvp/  # CPU
+docker build --file mvp/Dockerfile --build-arg CUDA_VERSION=12 --build-arg ENVIRONMENT=stage-1-gpu --platform linux/amd64 --tag ghcr.io/rkhashmani/stellaforge:stage-1-gpu mvp/  # GPU
 ```
 
 Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-1-cpu` and `stage-1-gpu`. CI builds via `.github/workflows/docker.yml`.
