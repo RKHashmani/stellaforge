@@ -52,8 +52,16 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9;
 
 ### Installation & Platform
 
+**`NEOPAX`:** Install via the Pixi environment. From inside `mvp/`:
+
+```
+pixi install --environment stage-5
+```
+
+See `docs/mvp-pipeline.md` for run commands and I/O details.
+
 > [!TODO]
-> Document Pixi-based installation for NEOPAX and Trinity3D, including platform notes and smoke tests.
+> Document installation instructions and platform notes for `Trinity3D`.
 
 ---
 
@@ -275,8 +283,18 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9.
 
 ## Scripts & Workflows
 
+**`NEOPAX`:** Run inside a script. See `mvp/stage5-transport/neopax/run_NEOPAX.py` as a reference.
+
+**Input:** `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc` + `mvp/stage2-boozer/booz_xform_jax/expected_output/boozmn_HSX_QHS_vacuum_ns201.nc` + `mvp/stage3-neoclassical/monkes/expected_output/Monoenergetic_database_VMEC_s_coordinate_HSX.h5` (if using `monkes`)
+**Output:** `mvp/stage5-transport/neopax/expected_output/NEOPAX_output.h5`
+
+> [!NOTE]
+> `NEOPAX`, being the final stage, has additional complexities. If `monkes` is used, `NEOPAX` consumes a pre-built D_ij database. If `sfincs_jax` is used, `NEOPAX` runs a loop to optimize over different fluxes (more computationally expensive).
+
+See `docs/mvp-pipeline.md` for full I/O details.
+
 > [!TODO]
-> Document driver scripts, CLI arguments, adapter wiring, and end-to-end forward-pass examples for NEOPAX and Trinity3D.
+> Add standalone run scripts and workflows for `Trinity3D`.
 
 ---
 
@@ -291,9 +309,19 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9.
 
 ## Container Specification (Phase 2)
 
+**`NEOPAX`:** Built from the single templated `mvp/Dockerfile` using build arguments:
+
+```
+docker build --build-arg ENVIRONMENT=stage-5 mvp/        # CPU
+docker build --build-arg ENVIRONMENT=stage-5-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+```
+
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-5-cpu` and `stage-5-gpu`. CI builds via `.github/workflows/docker.yml`.
+
+See [guide](../guide.md#container-architecture) for full architecture details.
+
 > [!TODO]
-> Define the Docker container for Stage 5: base image, dependencies, entry point, volume mounts, and resource requirements.
-> See [guide](../guide.md#container-architecture) for architecture details.
+> Define container specifications for `Trinity3D`.
 
 ---
 

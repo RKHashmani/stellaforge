@@ -33,8 +33,16 @@ Reference: `stellarator_workflow.tex`, Section 4.7; `stellarator_io_reference.te
 
 ### Installation & Platform
 
+**`SPECTRAX-GK`:** Install via the Pixi environment. From inside `mvp/`:
+
+```
+pixi install --environment stage-4
+```
+
+See `docs/mvp-pipeline.md` for run commands and I/O details.
+
 > [!TODO]
-> Document installation instructions for SPECTRAX-GK, GX, and GENE (platform matrix, dependencies, known issues).
+> Document installation instructions and platform notes for `GX` and `GENE`.
 
 ---
 
@@ -170,8 +178,28 @@ Reference: `stellarator_workflow.tex`, Section 4.7.
 
 ## Scripts & Workflows
 
+**`SPECTRAX-GK` (via Pixi):** From inside `mvp/`:
+
+```
+pixi run stage-4-turbulence
+```
+
+which executes something morally equivalent to:
+
+```
+spectrax-gk run --config ./stage4-turbulence/spectrax_gk/input/runtime_hsx_nonlinear_vmec_geometry.toml --out stage4-turbulence/spectrax_gk/tools_out/hsx_run
+```
+
+**Input:** `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc` + `mvp/stage4-turbulence/spectrax_gk/input/runtime_hsx_nonlinear_vmec_geometry.toml`
+**Output:** `mvp/stage4-turbulence/spectrax_gk/expected_output/hsx_run.summary.json` + `mvp/stage4-turbulence/spectrax_gk/expected_output/hsx_run.diagnostics.csv`
+
+> [!NOTE]
+> The TOML config has a `vmec_file` variable that must point to the Stage 1 output. The VMEC geometry path also requires `booz_xform_jax` at runtime (lazy dependency).
+
+See `docs/mvp-pipeline.md` for full I/O details.
+
 > [!TODO]
-> Provide standalone run examples, geometry conversion from Stage 1/2, and debugging workflows.
+> Add standalone run scripts and workflows for `GX` and `GENE`.
 
 ---
 
@@ -186,9 +214,19 @@ Reference: `stellarator_workflow.tex`, Section 4.7.
 
 ## Container Specification (Phase 2)
 
+**`SPECTRAX-GK`:** Built from the single templated `mvp/Dockerfile` using build arguments:
+
+```
+docker build --build-arg ENVIRONMENT=stage-4 mvp/        # CPU
+docker build --build-arg ENVIRONMENT=stage-4-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+```
+
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-4-cpu` and `stage-4-gpu`. CI builds via `.github/workflows/docker.yml`.
+
+See [guide](../guide.md#container-architecture) for full architecture details.
+
 > [!TODO]
-> Define container image, entry point, volume mounts, environment variables, and resource requirements.
-> See [guide](../guide.md#container-architecture) for architecture details.
+> Define container specifications for `GX` and `GENE`.
 
 ---
 

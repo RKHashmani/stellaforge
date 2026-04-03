@@ -237,8 +237,16 @@ pixi install --environment stage-3
 
 See `docs/mvp-pipeline.md` for run commands and I/O details.
 
+**`monkes`:** Install from source:
+
+```bash
+git clone https://github.com/eduardolneto/monkes.git
+cd monkes
+pip install .
+```
+
 > [!TODO]
-> Document installation instructions and platform notes for `NEO_JAX`, `NEO`, `monkes`, and `SFINCS`.
+> Document installation instructions and platform notes for `NEO_JAX`, `NEO`, and `SFINCS`.
 
 ---
 
@@ -271,8 +279,13 @@ pixi run stage-3-neoclassical
 
 See `docs/mvp-pipeline.md` for full I/O details.
 
+**`monkes`:** More involved than a single command. See `mvp/stage3-neoclassical/monkes/Test_Monoenergetic_database_VMEC_s_coordinate_HSX.py` for a reference script that generates a D_ij database across radial positions, electric fields, and collisionality.
+
+**Input:** `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc` + `mvp/stage2-boozer/booz_xform_jax/expected_output/boozmn_HSX_QHS_vacuum_ns201.nc`
+**Output:** `mvp/stage3-neoclassical/monkes/expected_output/Monoenergetic_database_VMEC_s_coordinate_HSX.h5`
+
 > [!TODO]
-> Add standalone run scripts and workflows for `NEO_JAX`, `NEO`, `monkes`, and `SFINCS`.
+> Add standalone run scripts and workflows for `NEO_JAX`, `NEO`, and `SFINCS`.
 
 ---
 
