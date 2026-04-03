@@ -1,0 +1,73 @@
+name: Docker Images
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+    paths:
+      - 'mvp/pixi.toml'
+      - 'mvp/pixi.lock'
+      - 'mvp/Dockerfile'
+      - 'mvp/.dockerignore'
+  pull_request:
+    paths:
+      - 'mvp/pixi.toml'
+      - 'mvp/pixi.lock'
+      - 'mvp/Dockerfile'
+      - 'mvp/.dockerignore'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build ${{ matrix.image-tag }} image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # stage-1
+          - environment: stage-1
+            image-tag: stage-1-cpu
+          - environment: stage-1-gpu
+            cuda-version: "12"
+            image-tag: stage-1-gpu
+          # stage-2
+          - environment: stage-2
+            image-tag: stage-2-cpu
+          - environment: stage-2-gpu
+            cuda-version: "12"
+            image-tag: stage-2-gpu
+          # stage-3
+          - environment: stage-3
+            image-tag: stage-3-cpu
+          - environment: stage-3-gpu
+            cuda-version: "12"
+            image-tag: stage-3-gpu
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        uses: ./.github/actions/build-docker
+        with:
+          environment: ${{ matrix.environment }}
+          image-tag: ${{ matrix.image-tag }}
+          cuda-version: ${{ matrix.cuda-version || '' }}
+          push: ${{ github.event_name != 'pull_request' }}
+          registry-username: ${{ github.repository_owner }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
