@@ -78,6 +78,13 @@ The pipeline should eventually support config-driven implementation swapping. Po
 
 6. Review `docs/mvp-pipeline.md` for the MVP I/O reference and Pixi install/run commands.
 
+### Contributing Changes
+
+1. Branch from `main` (e.g., `feat/stage1-newsoftware`, `fix/update-naming-schema`)
+2. Work through the relevant phase below
+3. Open a PR when deliverables are ready and request a review
+4. After review and merge, the corresponding progress item in the [README](../README.md#progress) gets checked off
+
 ## Phase 1: Document & Run
 
 Each stage has one owner responsible for their stage end-to-end. Each stage's `spec.md` has pre-populated sections (extracted from the TeX manuscripts) and clearly marked "TO BE COMPLETED" sections to fill in.
