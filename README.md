@@ -49,7 +49,7 @@ Stages 3 and 4 run in parallel. Each stage should eventually be independently sw
 
 1. Branch from `main` (e.g., `feat/stage1-newsoftware`)
 2. Work through the relevant phase in the [Guide](docs/guide.md#getting-started)
-3. Open a PR when deliverables are ready
+3. Open a PR when deliverables are ready and request a review
 4. After review and merge, the corresponding item below gets checked off
 
 ## Progress
