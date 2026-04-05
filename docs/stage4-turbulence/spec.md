@@ -36,7 +36,7 @@ Reference: `stellarator_workflow.tex`, Section 4.7; `stellarator_io_reference.te
 **`SPECTRAX-GK`:** Install via the Pixi environment. From inside `mvp/`:
 
 ```
-pixi install --environment stage-4
+pixi install --environment stage-4-spectrax
 ```
 
 See `docs/mvp-pipeline.md` for run commands and I/O details.
@@ -181,7 +181,7 @@ Reference: `stellarator_workflow.tex`, Section 4.7.
 **`SPECTRAX-GK` (via Pixi):** From inside `mvp/`:
 
 ```
-pixi run stage-4-turbulence
+pixi run stage-4-spectrax
 ```
 
 which executes something morally equivalent to:
@@ -217,11 +217,11 @@ See `docs/mvp-pipeline.md` for full I/O details.
 **`SPECTRAX-GK`:** Built from the single templated `mvp/Dockerfile` using build arguments:
 
 ```
-docker build --build-arg ENVIRONMENT=stage-4 mvp/        # CPU
-docker build --build-arg ENVIRONMENT=stage-4-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+docker build --build-arg ENVIRONMENT=stage-4-spectrax mvp/        # CPU
+docker build --build-arg ENVIRONMENT=stage-4-spectrax-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
 ```
 
-Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-4-cpu` and `stage-4-gpu`. CI builds via `.github/workflows/docker.yml`.
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-4-spectrax-cpu` and `stage-4-spectrax-gpu`. CI builds via `.github/workflows/docker.yml`.
 
 See [guide](../guide.md#container-architecture) for full architecture details.
 

@@ -29,7 +29,7 @@ Transforms a VMEC-style equilibrium into Boozer coordinates. Boozer coordinates 
 **`booz_xform_jax`:** Install via the Pixi environment. From inside `mvp/`:
 
 ```
-pixi install --environment stage-2
+pixi install --environment stage-2-booz
 ```
 
 See `docs/mvp-pipeline.md` for run commands and I/O details.
@@ -149,7 +149,7 @@ where $w$ is reconstructed from the original covariant field harmonics.
 **`booz_xform_jax` (via Pixi):** From inside `mvp/`:
 
 ```
-pixi run stage-2-boozer
+pixi run stage-2-booz
 ```
 
 **Input:** `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc` (from Stage 1)
@@ -176,11 +176,11 @@ See `docs/mvp-pipeline.md` for full I/O details.
 **`booz_xform_jax`:** Built from the single templated `mvp/Dockerfile` using build arguments:
 
 ```
-docker build --build-arg ENVIRONMENT=stage-2 mvp/        # CPU
-docker build --build-arg ENVIRONMENT=stage-2-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+docker build --build-arg ENVIRONMENT=stage-2-booz mvp/        # CPU
+docker build --build-arg ENVIRONMENT=stage-2-booz-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
 ```
 
-Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-2-cpu` and `stage-2-gpu`. CI builds via `.github/workflows/docker.yml`.
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-2-booz-cpu` and `stage-2-booz-gpu`. CI builds via `.github/workflows/docker.yml`.
 
 See [guide](../guide.md#container-architecture) for full architecture details.
 

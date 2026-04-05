@@ -161,15 +161,15 @@ After Phase 1 is complete for a stage, move to containerization and testing.
 
 StellaForge is a **recipe repo**: it contains everything needed to build and run the containerized pipeline, but does not contain the upstream solver code itself.
 
-**Pixi-based environments.** Dependencies are managed through `pixi.toml` files, e.g., `mvp/pixi.toml` and locked in `pixi.lock` files, e.g., `mvp/pixi.lock`. Stages with Pixi environments defined have named environments (e.g., `stage-1`, `stage-1-gpu`) that fully specify the dependency stack.
+**Pixi-based environments.** Dependencies are managed through `pixi.toml` files, e.g., `mvp/pixi.toml` and locked in `pixi.lock` files, e.g., `mvp/pixi.lock`. Stages with Pixi environments defined have named environments (e.g., `stage-1-vmec`, `stage-1-vmec-gpu`) that fully specify the dependency stack.
 
 **Single templated Dockerfile.** There is one shared `Dockerfile`, e.g. `mvp/Dockerfile` that uses build arguments to select the target environment at build time:
-- `ENVIRONMENT` -- the Pixi environment name (e.g., `stage-1`, `stage-2-gpu`). Must be passed explicitly when building locally: `docker build --build-arg ENVIRONMENT=stage-1 mvp/`
+- `ENVIRONMENT` -- the Pixi environment name (e.g., `stage-1-vmec`, `stage-2-booz-gpu`). Must be passed explicitly when building locally: `docker build --build-arg ENVIRONMENT=stage-1-vmec mvp/`
 - `CUDA_VERSION` -- set for GPU builds (e.g., `12`), left empty for CPU builds
 
 The Dockerfile uses a multi-stage build on a `ghcr.io/prefix-dev/pixi:noble` base image. See `mvp/Dockerfile` for implementation details.
 
-**Container images** are published to GHCR at `ghcr.io/rkhashmani/stellaforge`. For MVP, the tags follow the pattern `stage-{N}-cpu` / `stage-{N}-gpu` (e.g., `stage-1-cpu`). CI builds all stage variants from the single Dockerfile using a GitHub Actions matrix. See `.github/workflows/docker.yml` and `.github/actions/build-docker/action.yml` for the CI setup.
+**Container images** are published to GHCR at `ghcr.io/rkhashmani/stellaforge`. For MVP, the tags follow the pattern `stage-{N}-{code}-cpu` / `stage-{N}-{code}-gpu` (e.g., `stage-1-vmec-cpu`). CI builds all stage variants from the single Dockerfile using a GitHub Actions matrix. See `.github/workflows/docker.yml` and `.github/actions/build-docker/action.yml` for the CI setup.
 
 **Adding or updating a dependency:**
 1. Update the relevant `pixi.toml` (add/change the dependency or git rev)

@@ -55,7 +55,7 @@ Reference: `stellarator_workflow.tex`, Sections 4.8--4.9;
 **`NEOPAX`:** Install via the Pixi environment. From inside `mvp/`:
 
 ```
-pixi install --environment stage-5
+pixi install --environment stage-5-neopax
 ```
 
 See `docs/mvp-pipeline.md` for run commands and I/O details.
@@ -312,11 +312,11 @@ See `docs/mvp-pipeline.md` for full I/O details.
 **`NEOPAX`:** Built from the single templated `mvp/Dockerfile` using build arguments:
 
 ```
-docker build --build-arg ENVIRONMENT=stage-5 mvp/        # CPU
-docker build --build-arg ENVIRONMENT=stage-5-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+docker build --build-arg ENVIRONMENT=stage-5-neopax mvp/        # CPU
+docker build --build-arg ENVIRONMENT=stage-5-neopax-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
 ```
 
-Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-5-cpu` and `stage-5-gpu`. CI builds via `.github/workflows/docker.yml`.
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-5-neopax-cpu` and `stage-5-neopax-gpu`. CI builds via `.github/workflows/docker.yml`.
 
 See [guide](../guide.md#container-architecture) for full architecture details.
 

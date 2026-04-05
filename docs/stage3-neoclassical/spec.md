@@ -232,7 +232,7 @@ $$D_{ij} = \begin{pmatrix} D_{11} & D_{12} & D_{13} \\ D_{21} & D_{22} & D_{23} 
 **`sfincs_jax`:** Install via the Pixi environment. From inside `mvp/`:
 
 ```
-pixi install --environment stage-3
+pixi install --environment stage-3-sfincs
 ```
 
 See `docs/mvp-pipeline.md` for run commands and I/O details.
@@ -271,7 +271,7 @@ pip install .
 After editing `equilibriumFile` in `mvp/stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201` to point to the Stage 1 output:
 
 ```
-pixi run stage-3-neoclassical
+pixi run stage-3-sfincs
 ```
 
 **Input:** `mvp/stage1-equilibrium/vmec_jax/expected_output/wout_HSX_QHS_vacuum_ns201.nc` + `mvp/stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201`
@@ -303,11 +303,11 @@ See `docs/mvp-pipeline.md` for full I/O details.
 **`sfincs_jax`:** Built from the single templated `mvp/Dockerfile` using build arguments:
 
 ```
-docker build --build-arg ENVIRONMENT=stage-3 mvp/        # CPU
-docker build --build-arg ENVIRONMENT=stage-3-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
+docker build --build-arg ENVIRONMENT=stage-3-sfincs mvp/        # CPU
+docker build --build-arg ENVIRONMENT=stage-3-sfincs-gpu --build-arg CUDA_VERSION=12 mvp/  # GPU
 ```
 
-Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-3-cpu` and `stage-3-gpu`. CI builds via `.github/workflows/docker.yml`.
+Published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-3-sfincs-cpu` and `stage-3-sfincs-gpu`. CI builds via `.github/workflows/docker.yml`.
 
 See [guide](../guide.md#container-architecture) for full architecture details.
 

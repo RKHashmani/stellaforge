@@ -70,13 +70,13 @@ Each `input/` directory contains config files for that code. Each `expected_outp
 From inside the `mvp/` directory
 
 ```
-pixi install --environment stage-1
+pixi install --environment stage-1-vmec
 ```
 
 ### How to Run
 
 ```
-pixi run stage-1-equilibrium
+pixi run stage-1-vmec
 ```
 
 ---
@@ -96,13 +96,13 @@ pixi run stage-1-equilibrium
 ### How to Install
 
 ```
-pixi install --environment stage-2
+pixi install --environment stage-2-booz
 ```
 
 ### How to Run
 
 ```
-pixi run stage-2-boozer
+pixi run stage-2-booz
 ```
 
 which is morally similar to
@@ -133,7 +133,7 @@ b.write_boozmn("boozmn_HSX_QHS_vacuum_ns201.nc")
 #### How to Install
 
 ```
-pixi install --environment stage-3
+pixi install --environment stage-3-sfincs
 ```
 
 #### How to Run
@@ -141,7 +141,7 @@ pixi install --environment stage-3
 **After** manually editing the value of `equilibriumFile` in `mvp/stage3-neoclassical/sfincs_jax/input/input.HSX_QHS_vacuum_ns201`, run
 
 ```
-pixi run stage-3-neoclassical
+pixi run stage-3-sfincs
 ```
 
 
@@ -188,13 +188,13 @@ We basically call it inside a python loop to use Monkes to generate a database a
 ### How to Install
 
 ```
-pixi install --environment stage-4
+pixi install --environment stage-4-spectrax
 ```
 
 ### How to Run
 
 ```
-pixi run stage-4-turbulence
+pixi run stage-4-spectrax
 ```
 
 which executes something morally equivalent to
@@ -221,7 +221,7 @@ spectrax-gk run --config runtime_hsx_nonlinear_vmec_geometry.toml --out tools_ou
 ### How to Install
 
 ```
-pixi install --environment stage-5
+pixi install --environment stage-5-neopax
 ```
 
 ### How to Run

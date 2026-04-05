@@ -39,36 +39,36 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # stage-1
-          - environment: stage-1
-            image-tag: stage-1-cpu
-          - environment: stage-1-gpu
+          # Stage 1: Equilibrium
+          - environment: stage-1-vmec
+            image-tag: stage-1-vmec-cpu
+          - environment: stage-1-vmec-gpu
             cuda-version: "12"
-            image-tag: stage-1-gpu
-          # stage-2
-          - environment: stage-2
-            image-tag: stage-2-cpu
-          - environment: stage-2-gpu
+            image-tag: stage-1-vmec-gpu
+          # Stage 2: Boozer Transform
+          - environment: stage-2-booz
+            image-tag: stage-2-booz-cpu
+          - environment: stage-2-booz-gpu
             cuda-version: "12"
-            image-tag: stage-2-gpu
-          # stage-3
-          - environment: stage-3
-            image-tag: stage-3-cpu
-          - environment: stage-3-gpu
+            image-tag: stage-2-booz-gpu
+          # Stage 3: Neoclassical Transport
+          - environment: stage-3-sfincs
+            image-tag: stage-3-sfincs-cpu
+          - environment: stage-3-sfincs-gpu
             cuda-version: "12"
-            image-tag: stage-3-gpu
-          # stage-4
-          - environment: stage-4
-            image-tag: stage-4-cpu
-          - environment: stage-4-gpu
+            image-tag: stage-3-sfincs-gpu
+          # Stage 4: Turbulence
+          - environment: stage-4-spectrax
+            image-tag: stage-4-spectrax-cpu
+          - environment: stage-4-spectrax-gpu
             cuda-version: "12"
-            image-tag: stage-4-gpu
-          # stage-5
-          - environment: stage-5
-            image-tag: stage-5-cpu
-          - environment: stage-5-gpu
+            image-tag: stage-4-spectrax-gpu
+          # Stage 5: Transport
+          - environment: stage-5-neopax
+            image-tag: stage-5-neopax-cpu
+          - environment: stage-5-neopax-gpu
             cuda-version: "12"
-            image-tag: stage-5-gpu
+            image-tag: stage-5-neopax-gpu
 
     steps:
       - name: Checkout

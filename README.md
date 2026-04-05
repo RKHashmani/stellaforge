@@ -124,7 +124,7 @@ git clone https://github.com/RKHashmani/StellaForge.git
 cd StellaForge
 git submodule update --init --recursive
 snakemake --sdm docker --configfile config.yaml
-docker pull ghcr.io/rkhashmani/stellaforge:stage-1-cpu
+docker pull ghcr.io/rkhashmani/stellaforge:stage-1-vmec-cpu
 -->
 
 ## License

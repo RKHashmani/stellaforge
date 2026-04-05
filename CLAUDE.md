@@ -55,7 +55,7 @@ Forward-pass chain: `vmec_jax` -> `booz_xform_jax` -> (`sfincs_jax` / `monkes`) 
 ### Naming Conventions
 
 - Stage directories: `stage{N}-{name}` (e.g., `stage1-equilibrium`)
-- Container images: `ghcr.io/rkhashmani/stellaforge:stage-{N}-cpu` / `stage-{N}-gpu` (on GHCR)
+- Container images: `ghcr.io/rkhashmani/stellaforge:stage-{N}-{code}-cpu` / `stage-{N}-{code}-gpu` (e.g., `stage-1-vmec-cpu`) (on GHCR)
 - W&B projects: `stellaforge-stage{N}-{name}`
 - Output directories: `{run_dir}/stage{N}_{name}/`
 - Test files: mirror source structure in `tests/`
@@ -225,7 +225,7 @@ Snakemake rules define which files connect which stages. Each stage's `spec.md` 
 **StellaForge container architecture** (see `docs/guide.md#container-architecture` for full details):
 - All dependencies are managed through Pixi (e.g., `mvp/pixi.toml` + `mvp/pixi.lock`).
 - A single templated Dockerfile (e.g., `mvp/Dockerfile`) builds all stages using `ghcr.io/prefix-dev/pixi:noble` as the base image. Build arguments (`ENVIRONMENT`, `CUDA_VERSION`) select the target stage and GPU support.
-- Container images are published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-{N}-cpu` / `stage-{N}-gpu`. CI builds all stage variants from the single Dockerfile using a GitHub Actions matrix.
+- Container images are published to GHCR as `ghcr.io/rkhashmani/stellaforge:stage-{N}-{code}-cpu` / `stage-{N}-{code}-gpu` (e.g., `stage-1-vmec-cpu`). CI builds all stage variants from the single Dockerfile using a GitHub Actions matrix.
 - Source-built upstream packages are pinned to exact git commit SHAs in `pixi.toml`.
 
 ### Performance & Memory Management
