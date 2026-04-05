@@ -36,7 +36,7 @@ Reference: `stellarator_io_reference.tex`, Section 3.4.
 #### Input Validation
 
 > [!TODO]
-> Document input validation checks for NEO / NEO_JAX (required boozmn fields, resolution parameter ranges, surface index bounds, Fourier cutoff limits, CALC_CUR guidance, error codes, JAX vs. legacy differences).
+> See [I/O Validation section](../guide.md#io-validation).
 
 ### Output Specification
 
@@ -67,7 +67,7 @@ Optional outputs (if CALC_CUR=1): `neo_cur.*`, `current.dat`, `conver.dat`, `dia
 #### Output Validation
 
 > [!TODO]
-> Document output validation checks for NEO / NEO_JAX (field presence and shapes, epstot finiteness and physical range, iota cross-check vs. Stage 2, per-class sum consistency, convergence criteria, cross-code agreement, logging strategy).
+> See [I/O Validation section](../guide.md#io-validation).
 
 ### Governing Equations
 
@@ -113,7 +113,7 @@ Key namelist parameters: species charges/masses, $\hat{n}_s$, $\hat{T}_s$, their
 #### Input Validation
 
 > [!TODO]
-> Document input validation checks for SFINCS / sfincs_jax (required namelist groups, species parameter consistency, gradient sign conventions, resolution parameter ranges, geometry source verification, E_r initial guess guidance, Phi1 switch implications, error codes, JAX vs. legacy differences).
+> See [I/O Validation section](../guide.md#io-validation).
 
 ### Output Specification
 
@@ -139,7 +139,7 @@ Also: matching momentum-flux arrays, classical fluxes, optional full-f/delta-f e
 #### Output Validation
 
 > [!TODO]
-> Document output validation checks for SFINCS / sfincs_jax (field presence and shapes, flux finiteness, ambipolarity check, bootstrap current sanity, Onsager symmetry of transport matrix, physical range checks, convergence criteria, cross-code agreement, Phi1 output presence, logging strategy).
+> See [I/O Validation section](../guide.md#io-validation).
 
 ### Governing Equations
 
@@ -180,7 +180,7 @@ In database-building mode: the solve is repeated over collisionality (nu_v) and 
 #### Input Validation
 
 > [!TODO]
-> Document input validation checks for monkes (field object attributes, species parameter validation, E_r and nu_v grid spacing for database building, pitch-angle resolution bounds, surface selection, error codes, DESC vs. boozmn geometry handling).
+> See [I/O Validation section](../guide.md#io-validation).
 
 ### Output Specification
 
@@ -207,7 +207,7 @@ Reference: `stellarator_io_reference.tex`, Section 3.6.
 #### Output Validation
 
 > [!TODO]
-> Document output validation checks for monkes (field presence and shapes, D_ij finiteness across full grid, D11/D33 positivity, Onsager symmetry, 1/nu and plateau limiting behavior, grid coverage for NEOPAX, database completeness, Legendre convergence, logging strategy).
+> See [I/O Validation section](../guide.md#io-validation).
 
 ### Governing Equations
 

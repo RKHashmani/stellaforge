@@ -27,6 +27,7 @@ Stages 3 and 4 run in parallel. Each stage should eventually be independently sw
 | Stage I/O specs                         | [`docs/stage{N}-{name}/spec.md`](docs/)                        |
 | MVP I/O reference & Pixi commands       | [`docs/mvp-pipeline.md`](docs/mvp-pipeline.md)                 |
 | Physics equations & I/O contracts (TeX) | [`stellarator_workflow/`](stellarator_workflow/)               |
+| I/O validation methodology              | [`docs/guide.md#io-validation`](docs/guide.md#io-validation)          |
 | Coding standards                        | [`docs/guide.md#coding-conventions`](docs/guide.md#coding-conventions) |
 
 ## Pipeline Stages

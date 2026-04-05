@@ -54,7 +54,7 @@ The JAX version (`booz_xform_jax`) does not use a separate `in_booz.*` control f
 ### Input Validation
 
 > [!TODO]
-> Document input validation checks for wout fields, mboz/nboz bounds, surface indices, and equilibrium quality thresholds.
+> See [I/O Validation section](../guide.md#io-validation).
 
 ---
 
@@ -96,7 +96,7 @@ Non-target Boozer harmonics in `bmnc_b` or symmetry-breaking measures built from
 ### Output Validation
 
 > [!TODO]
-> Document output validation checks: field completeness, spectral convergence, iota consistency, and |B| cross-checks against VMEC.
+> See [I/O Validation section](../guide.md#io-validation).
 
 ---
 

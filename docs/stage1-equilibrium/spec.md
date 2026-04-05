@@ -81,7 +81,7 @@ Reference: `stellarator_io_reference.tex`, Section 3.1.
 ### Input Validation
 
 > [!TODO]
-> Validate input tables against actual code behavior.
+> See [I/O Validation section](../guide.md#io-validation).
 
 ---
 
@@ -161,7 +161,7 @@ Stage 2 (`BOOZ_XFORM` / `booz_xform_jax`) needs the **full** equilibrium spectru
 ### Output Validation
 
 > [!TODO]
-> Verify output fields against actual `wout_*.nc` files.
+> See [I/O Validation section](../guide.md#io-validation).
 
 ---
 
