@@ -106,7 +106,7 @@ Reference: `stellarator_io_reference.tex`, Sections 3.11-3.12.
 ### Input Validation
 
 > [!TODO]
-> Define input validation rules for the D_ij database, wout/boozmn consistency, and Trinity3D TOML schema.
+> See [I/O Validation section](../guide.md#io-validation).
 
 ---
 
@@ -222,7 +222,7 @@ $P_\text{fus}$, $Q$, $\beta$, transport-consistent profiles.
 ### Output Validation
 
 > [!TODO]
-> Define output validation: physical sanity checks, conservation balances, shape consistency, and regression comparisons.
+> See [I/O Validation section](../guide.md#io-validation).
 
 ---
 

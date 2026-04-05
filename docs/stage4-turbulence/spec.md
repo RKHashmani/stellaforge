@@ -76,7 +76,7 @@ Installation-dependent. Key physics contract: geometry from VMEC/Boozer, species
 ### Input Validation
 
 > [!TODO]
-> Validate input tables against actual code behavior (required vs. optional fields, defaults, normalization conventions).
+> See [I/O Validation section](../guide.md#io-validation).
 
 ---
 
@@ -146,7 +146,7 @@ For transport coupling, the critical handoff is the **turbulent flux vector** (s
 ### Output Validation
 
 > [!TODO]
-> Verify output fields against actual gyrokinetic runs (formats, units, normalization, steady-state extraction).
+> See [I/O Validation section](../guide.md#io-validation).
 
 ---
 

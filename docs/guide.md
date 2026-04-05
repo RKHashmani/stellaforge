@@ -261,6 +261,16 @@ When integrating a new stage or implementation:
 
 Output files should be inspected to verify that shapes, types (float32 vs float64), units, and coordinate conventions match between the output and the next stage's expected input.
 
+## I/O Validation
+
+Each stage validates its inputs and outputs in two steps:
+
+1. **Schema validation.** Verify that files match the spec -- all required fields present, correct types, shapes, and file format (NetCDF/HDF5/TOML). The spec tables were initially derived from upstream documentation, not direct inspection of code output. If actual files differ from the spec, update the spec to match the actual input/output data.
+
+2. **Physics validation.** Check that values are physically sensible and compatible with downstream stages: finiteness, non-negativity where expected, conservation laws, cross-stage consistency (e.g., iota in `boozmn_*.nc` matches `wout_*.nc`), convergence criteria met, etc.. The goal is to catch bad data at stage boundaries before it silently propagates through the pipeline.
+
+Each stage's `spec.md` lists the specific schema and physics checks under its Input Validation and Output Validation sections. Validation methods should be implemented as testable functions so they can run as part of the test suite (see [Writing Tests](#writing-tests)).
+
 ## Known Risks
 
 **1. Source-build fragility.** Some upstream codes have no release versions and must be built from source. Pin to a tested git commit SHA in `pixi.toml`. Test builds in CI and maintain fallback known-good revisions.
